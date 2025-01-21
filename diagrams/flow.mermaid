@@ -1,0 +1,45 @@
+graph TD
+    A[Performance Drop Detected] --> B[[Define Impact Window]]
+    B -->|Performance Metrics| C[Compare with Baseline]
+    
+    C --> D[[Identify Pattern]]
+    D -->|Sudden Drop| E[Time-based Analysis]
+    D -->|Gradual Decline| F[Drift Analysis]
+    
+    E --> G[[Cohort Analysis]]
+    F --> G
+    
+    G -->|High Impact Segments| H[Feature Distribution Analysis]
+    G -->|No Clear Segments| I[Global Performance Analysis]
+    
+    H --> J[[Distribution Shift?]]
+    J -->|Yes| K[Feature Importance Analysis]
+    J -->|No| L[Error Analysis]
+    
+    I --> M[[Global Metrics Review]]
+    M -->|Specific Metric Drop| N[Metric-Focused Analysis]
+    M -->|Overall Degradation| O[Model Behavior Analysis]
+    
+    K --> P[Local Explanation]
+    L --> P
+    N --> P
+    O --> P
+    
+    P --> Q[[Root Cause Identified?]]
+    Q -->|Yes| R[Recommendations]
+    Q -->|No| S[Iterate with Different Cohort]
+    S --> G
+
+    subgraph Analysis Steps
+        T[Performance Metrics]
+        U[Raw Feature Values]
+        V[Model Predictions]
+        W[Ground Truth Labels]
+    end
+
+    subgraph Tools
+        X[SHAP/LIME]
+        Y[PDP/ICE]
+        Z[Feature Importance]
+        AA[Statistical Tests]
+    end
