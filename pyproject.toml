@@ -7,7 +7,7 @@ name = "on-call"
 version = "0.1.0"
 description = "Model debugger"
 readme = "README.md"
-requires-python = ">=3.10,<=3.11"
+requires-python = ">=3.10,<=3.12"
 license = "MIT"
 authors = [
     { name = "RapidML", email = "founders@rapidml.xyz" }
@@ -22,6 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "requests>=2.28.0",
+    "langgraph>=0.2.66",
 ]
 
 [project.optional-dependencies]
@@ -40,7 +41,7 @@ Repository = "https://github.com/rapid-ml-xyz/on-call.git"
 "Bug Tracker" = "https://github.com/rapid-ml-xyz/on-call/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/on_call"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -67,7 +68,7 @@ disallow_untyped_defs = true
 check_untyped_defs = true
 
 [tool.coverage.run]
-source = ["src"]
+source = ["src/on_call"]
 
 [tool.coverage.report]
 exclude_lines = [
