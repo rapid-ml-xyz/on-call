@@ -1,14 +1,14 @@
 from typing import Any, Dict, Optional
-from src.modules.eda import EDA
-from src.modules.cohort_identification import CohortIdentifier
-from src.modules.metric_analyzer import MetricAnalyzer
-from src.modules.distribution_analyzer import DistributionAnalyzer
-from src.modules.error_analyzer import ErrorAnalyzer
-from src.modules.feature_analyzer import FeatureAnalyzer
-from src.modules.explainable_ai import ExplainableAIModule
-from src.modules.model_behavior_analyzer import ModelBehaviorAnalyzer
-from src.utils.config_manager import ConfigManager
-from src.utils.logger import get_logger
+from src.on_call.modules.eda import EDA
+from src.on_call.modules.cohort_identification import CohortIdentifier
+from src.on_call.modules.metric_analyzer import MetricAnalyzer
+from src.on_call.modules.distribution_analyzer import DistributionAnalyzer
+from src.on_call.modules.error_analyzer import ErrorAnalyzer
+from src.on_call.modules.feature_analyzer import FeatureAnalyzer
+from src.on_call.modules.explainable_ai import ExplainableAIModule
+from src.on_call.modules.model_behavior_analyzer import ModelBehaviorAnalyzer
+from src.on_call.utils.config_manager import ConfigManager
+from src.on_call.utils.logger import get_logger
 
 
 class Orchestrator:
