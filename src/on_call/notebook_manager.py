@@ -1,6 +1,7 @@
 import os
 import nbformat
 from nbformat.v4 import new_notebook, new_code_cell, new_markdown_cell
+from nbconvert import HTMLExporter
 
 from jupyter_client.manager import KernelManager
 from typing import Optional, List, Dict, Any
@@ -166,7 +167,9 @@ class NotebookManager:
                 if msg["content"]["execution_state"] == "idle":
                     break
 
-            elif msg_type in ("execute_result", "display_data"):
+            self._render_html()
+
+            if msg_type in ("execute_result", "display_data"):
                 # Typical outputs that go into 'outputs'
                 content = msg["content"]
                 output = nbformat.v4.new_output(
@@ -214,6 +217,11 @@ class NotebookManager:
         """
         self._stop_kernel()
         self.save_notebook()
+
+    def _render_html(self):
+        (body, _) = HTMLExporter().from_notebook_node(self.notebook)
+        with open(f"{self.notebook_path.split('.')[0]}.html", "w", encoding="utf-8") as f:
+            f.write(body)
 
     def __del__(self):
         """
