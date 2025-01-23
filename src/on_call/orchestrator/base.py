@@ -1,66 +1,63 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Generic
-
-from .types import S, C, T, WorkflowState
-from .models import Agent, Edge
+from typing import Any, Dict, List, Generic
+from .models import S, T, Agent, NodeConfig, NodeType
 
 
-class BaseOrchestrator(ABC, Generic[S, C, T]):
-    def __init__(self, config: Optional[C] = None):
-        self.agents: Dict[str, Agent[T]] = {}
-        self.workflow_graph: Dict[str, List[Edge]] = {}
-        self.config: Optional[C] = config
-        self.tool_executor: Optional[Any] = None
-        self._entry_point: Optional[str] = None
-        self._is_initialized: bool = False
+class BaseOrchestrator(ABC, Generic[S, T]):
+    """Base class for workflow orchestration."""
+
+    def __init__(self):
+        self.tools: Dict[str, T] = {}
+        self.nodes: Dict[str, NodeConfig[S, T]] = {}
+        self.entry_point: str | None = None
+
+    def get_tools_for_node(self, node_name: str) -> List[T]:
+        node = self.nodes.get(node_name)
+        if not node:
+            raise ValueError(f"Node {node_name} not found")
+
+        if node.node_type == NodeType.FUNCTION:
+            return []
+
+        if not node.allowed_tools:
+            return list(self.tools.values())
+
+        return [
+            tool for name, tool in self.tools.items()
+            if name in node.allowed_tools
+        ]
 
     @abstractmethod
-    def add_agent(self, agent: Agent[T]) -> None:
-        """Add an agent to the orchestrator."""
+    def create_agent(self, tools: List[T], agent_config: Dict[str, Any]) -> Agent[S]:
+        pass
+
+    def add_node(self, config: NodeConfig[S, T]) -> None:
+        if config.node_type == NodeType.AGENT:
+            if not config.agent_config:
+                raise ValueError("Agent nodes must include agent_config")
+            if not config.agent:
+                tools = [self.tools[name] for name in config.allowed_tools]
+                config.agent = self.create_agent(tools, config.agent_config)
+
+        self.nodes[config.name] = config
+        self._add_node_to_graph(config)
+
+    def configure_nodes(self, node_configs: List[NodeConfig[S, T]]) -> None:
+        for config in node_configs:
+            self.add_node(config)
+
+    @abstractmethod
+    def _add_node_to_graph(self, node: NodeConfig[S, T]) -> None:
         pass
 
     @abstractmethod
-    def remove_agent(self, agent_name: str) -> None:
-        """Remove an agent from the orchestrator."""
+    def set_entry_point(self, node_name: str) -> None:
         pass
 
     @abstractmethod
-    def connect(self,
-                from_agent: str,
-                to_agent: str,
-                condition: Optional[callable] = None,
-                edge_config: Optional[Dict[str, Any]] = None) -> None:
-        """Define workflow connections between agents."""
+    def run(self, initial_state: S) -> S:
         pass
 
     @abstractmethod
-    def set_entry_point(self, agent_name: str) -> None:
-        """Set the starting agent for the workflow."""
+    def visualize_graph(self) -> None:
         pass
-
-    @abstractmethod
-    async def run(self, initial_state: S) -> WorkflowState[S]:
-        """Execute the workflow with given input state."""
-        pass
-
-    @abstractmethod
-    def get_trace(self) -> List[Dict[str, Any]]:
-        """Return the execution trace/history."""
-        pass
-
-    def validate_workflow(self) -> bool:
-        """Validate the workflow configuration."""
-        if not self.agents:
-            raise ValueError("No agents defined in the workflow")
-
-        if not self._entry_point:
-            raise ValueError("No entry point defined")
-
-        for from_agent, edges in self.workflow_graph.items():
-            if from_agent not in self.agents:
-                raise ValueError(f"Agent {from_agent} not found")
-            for edge in edges:
-                if edge.to_agent not in self.agents:
-                    raise ValueError(f"Agent {edge.to_agent} not found")
-
-        return True

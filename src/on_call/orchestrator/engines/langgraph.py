@@ -1,205 +1,152 @@
-from typing import Dict, List, Optional, Any, cast
-from langgraph.graph import Graph, StateGraph
-from langgraph.prebuilt import ToolExecutor
-
+from typing import Dict, List, Any
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.tools import BaseTool
+from src.on_call.logger import logging
 from ..base import BaseOrchestrator
-from ..types import S, C, T, WorkflowState, NodeFunction
-from ..models import Agent, Edge
-from ..utils.validation import validate_agent_config
-from ..utils.errors import (
-    AgentNotFoundError,
-    DuplicateAgentError,
-    WorkflowValidationError,
-    GraphBuildError
-)
+from ..models import Agent, NodeConfig, NodeType, Tool, WorkflowState
+
+LangGraphMessageState = Dict[str, List[BaseMessage]]
 
 
-class LangGraphOrchestrator(BaseOrchestrator[S, C, T]):
-    def __init__(self, config: Optional[C] = None):
-        """Initialize LangGraph orchestrator with optional configuration."""
-        super().__init__(config)
-        self.state_graph: Optional[StateGraph] = None
-        self.graph: Optional[Graph] = None
-        self._node_functions: Dict[str, NodeFunction] = {}
+class LangGraphToolWrapper:
+    def __init__(self, tool: BaseTool):
+        self.tool = tool
+        self.name = tool.name
+        self.description = tool.description
 
-    def add_agent(self, agent: Agent[T]) -> None:
-        """Add an agent to the workflow."""
-        validate_agent_config(agent)
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        logging.info(f"Invoking tool: {self.name}")
+        result = self.tool.invoke(*args, **kwargs)
+        return result
 
-        if agent.name in self.agents:
-            raise DuplicateAgentError(f"Agent {agent.name} already exists")
 
-        self.agents[agent.name] = agent
-        if agent.tools:
-            if not self.tool_executor:
-                self.tool_executor = ToolExecutor(agent.tools)
-            else:
-                for tool in agent.tools:
-                    self.tool_executor.add_tool(tool)
+class LangGraphAgentFactory:
+    @staticmethod
+    def create_react_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
+        from langgraph.prebuilt import create_react_agent
 
-        self._is_initialized = False
+        logging.info("Creating react agent")
+        llm = agent_config["llm"]
+        langchain_tools = [
+            tool.tool if isinstance(tool, LangGraphToolWrapper) else tool
+            for tool in tools
+        ]
+        system_message = agent_config["system_message"]
+        agent = create_react_agent(llm, langchain_tools, state_modifier=system_message)
 
-    def remove_agent(self, agent_name: str) -> None:
-        """Remove an agent from the workflow."""
-        if agent_name not in self.agents:
-            raise AgentNotFoundError(f"Agent {agent_name} not found")
+        class WrappedReActAgent:
+            def invoke(self, state: WorkflowState[LangGraphMessageState]) -> WorkflowState[LangGraphMessageState]:
+                result = agent.invoke(state.state)
+                return WorkflowState(result)
 
-        agent = self.agents[agent_name]
+        return WrappedReActAgent()
 
-        if agent.tools and self.tool_executor:
-            for tool in agent.tools:
-                self.tool_executor.remove_tool(tool)
+    @staticmethod
+    def create_simple_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
+        """Create a simple agent that executes one tool call."""
+        from langchain.agents import ZeroShotAgent
+        from langchain.agents import AgentExecutor
 
-        if agent_name in self.workflow_graph:
-            del self.workflow_graph[agent_name]
-
-        for _, edges in self.workflow_graph.items():
-            edges[:] = [e for e in edges if e.to_agent != agent_name]
-
-        del self.agents[agent_name]
-
-        self._is_initialized = False
-
-    def connect(self,
-                from_agent: str,
-                to_agent: str,
-                condition: Optional[callable] = None,
-                edge_config: Optional[Dict[str, Any]] = None) -> None:
-        """Connect two agents in the workflow."""
-        if from_agent not in self.agents:
-            raise AgentNotFoundError(f"Source agent {from_agent} not found")
-        if to_agent not in self.agents:
-            raise AgentNotFoundError(f"Target agent {to_agent} not found")
-
-        if from_agent not in self.workflow_graph:
-            self.workflow_graph[from_agent] = []
-
-        edge = Edge(
-            from_agent=from_agent,
-            to_agent=to_agent,
-            condition=condition,
-            config=edge_config or {}
+        logging.info("Creating simple agent")
+        llm = agent_config["llm"]
+        langchain_tools = [
+            tool.tool if isinstance(tool, LangGraphToolWrapper) else tool
+            for tool in tools
+        ]
+        system_message = agent_config["system_message"]
+        agent = ZeroShotAgent.from_llm_and_tools(
+            llm=llm,
+            tools=langchain_tools,
+            prefix=system_message
         )
-        self.workflow_graph[from_agent].append(edge)
+        agent_executor = AgentExecutor.from_agent_and_tools(
+            agent=agent,
+            tools=langchain_tools,
+            verbose=True
+        )
 
-        self._is_initialized = False
+        class WrappedSimpleAgent:
+            def invoke(self, state: WorkflowState[LangGraphMessageState]) -> WorkflowState[LangGraphMessageState]:
+                messages = state.state["messages"]
+                last_message = messages[-1].content
+                result = agent_executor.invoke({"input": last_message})
+                messages.append(HumanMessage(content=str(result["output"])))
+                return WorkflowState({"messages": messages})
 
-    def set_entry_point(self, agent_name: str) -> None:
-        """Set the workflow entry point."""
-        if agent_name not in self.agents:
-            raise AgentNotFoundError(f"Agent {agent_name} not found")
-        self._entry_point = agent_name
+        return WrappedSimpleAgent()
 
-        self._is_initialized = False
 
-    async def run(self, initial_state: S) -> WorkflowState[S]:
-        """Execute the workflow with given initial state."""
-        if not self._is_initialized:
-            try:
-                self.validate_workflow()
-                self._build_graph()
-                self._is_initialized = True
-            except Exception as e:
-                raise WorkflowValidationError(f"Workflow validation failed: {str(e)}")
+class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToolWrapper]):
+    def __init__(self):
+        super().__init__()
+        from langgraph.graph import StateGraph, MessagesState
+        self.agent_factory = LangGraphAgentFactory()
+        self._graph = StateGraph(MessagesState)
 
-        workflow_state = WorkflowState(initial_state)
+    def configure_nodes(self, nodes: List[NodeConfig]) -> None:
+        from langgraph.graph import END
 
-        if not self.graph:
-            raise GraphBuildError("Graph not properly initialized")
+        for node in nodes:
+            if node.node_type == NodeType.AGENT:
+                node_tools = [self.tools[tool_name] for tool_name in node.allowed_tools]
+                node.agent = self.create_agent(node_tools, node.agent_config)
 
-        try:
-            result = await self.graph.ainvoke({
-                "state": workflow_state.state,
-                "tools": self.tool_executor if self.tool_executor else None
-            })
-            workflow_state.state = cast(S, result["state"])
-            if "messages" in result:
-                workflow_state.messages.extend(result["messages"])
-            if "artifacts" in result:
-                workflow_state.artifacts.update(result["artifacts"])
+            self.nodes[node.name] = node
+            self._add_node_to_graph(node)
 
-        except Exception as e:
-            workflow_state.messages.append({
-                "type": "error",
-                "content": str(e)
-            })
-            raise
+            if node.next_node is None:
+                self._graph.add_edge(node.name, END)
+            else:
+                self._graph.add_edge(node.name, node.next_node)
 
-        return workflow_state
+    def create_agent(self, tools: List[LangGraphToolWrapper], agent_config: Dict[str, Any]) \
+            -> Agent[LangGraphMessageState]:
+        if agent_config.get("type", "react") == "simple":
+            return self.agent_factory.create_simple_agent(tools, agent_config)
+        return self.agent_factory.create_react_agent(tools, agent_config)
 
-    def get_trace(self) -> List[Dict[str, Any]]:
-        """Get execution trace history."""
-        if self.graph:
-            return self.graph.get_trace()
-        return []
+    def _add_node_to_graph(self, node: NodeConfig[LangGraphMessageState, LangGraphToolWrapper]) -> None:
+        if not node.is_configured:
+            raise ValueError(f"Node {node.name} must be configured before adding to graph")
 
-    def _build_graph(self) -> None:
-        """Build the LangGraph graph from workflow configuration."""
-        try:
-            self.state_graph = StateGraph()
+        workflow_node = node.create_node()
 
-            for agent_name, agent in self.agents.items():
-                node_func = self._create_agent_node(agent)
-                self._node_functions[agent_name] = node_func
-                self.state_graph.add_node(agent_name, node_func)
+        def node_fn(state: Dict[str, List[BaseMessage]]) -> Dict[str, Any]:
+            workflow_state = WorkflowState(state)
 
-            for from_agent, edges in self.workflow_graph.items():
-                for edge in edges:
-                    self.state_graph.add_edge(
-                        from_agent,
-                        edge.to_agent,
-                    )
+            logging.info(f"Executing node: {node.name}")
+            result = workflow_node.invoke(workflow_state)
+            goto = node.next_node
 
-            if self._entry_point:
-                self.state_graph.set_entry_point(self._entry_point)
+            if node.node_type == NodeType.AGENT and result.state["messages"]:
+                last_message = result.state["messages"][-1].content
+                result.state["messages"][-1] = HumanMessage(
+                    content=last_message,
+                    name=node.name
+                )
 
-            self.graph = self.state_graph.compile()
+            return {
+                "messages": result.state["messages"],
+                "__goto__": goto
+            }
 
-        except Exception as e:
-            raise GraphBuildError(f"Failed to build graph: {str(e)}")
+        self._graph.add_node(node.name, node_fn)
 
-    def _create_agent_node(self, agent: Agent[T]) -> NodeFunction:
-        """Create a node function for the agent."""
-        async def node_func(state: Dict[str, Any]) -> Dict[str, Any]:
-            try:
-                current_state = state.get("state", {})
-                tools = state.get("tools")
+    def set_entry_point(self, node_name: str) -> None:
+        from langgraph.graph import START
+        if node_name not in self.nodes:
+            raise ValueError(f"Node {node_name} not found")
+        self.entry_point = node_name
+        self._graph.add_edge(START, node_name)
 
-                context = {
-                    "agent": agent,
-                    "tools": tools,
-                    "state": current_state
-                }
+    def run(self, messages: List[BaseMessage]) -> LangGraphMessageState:
+        if not self.entry_point:
+            raise ValueError("Entry point not set")
 
-                if agent.tools and tools:
-                    for tool in agent.tools:
-                        try:
-                            result = await tools.arun(tool, current_state)
-                            current_state.update(result)
-                        except Exception as e:
-                            current_state["errors"] = current_state.get("errors", [])
-                            current_state["errors"].append({
-                                "tool": tool.__class__.__name__,
-                                "error": str(e)
-                            })
+        compiled_graph = self._graph.compile()
+        initial_state = {"messages": messages}
+        result = compiled_graph.invoke(initial_state)
+        return result
 
-                if hasattr(agent, "process"):
-                    current_state = await agent.process(context)
-
-                return {
-                    "state": current_state,
-                    "messages": state.get("messages", []),
-                    "artifacts": state.get("artifacts", {})
-                }
-
-            except Exception as e:
-                return {
-                    "state": state.get("state", {}),
-                    "messages": state.get("messages", []) + [{
-                        "type": "error",
-                        "content": f"Error in agent {agent.name}: {str(e)}"
-                    }],
-                    "artifacts": state.get("artifacts", {})
-                }
-
-        return node_func
+    def visualize_graph(self) -> None:
+        self._graph.compile().get_graph().print_ascii()
