@@ -1,0 +1,53 @@
+flowchart TB
+    A[All ML Model Errors] --> B(Performance-Based Errors)
+    B --> B1(Overfitting)
+    B --> B2(Underfitting)
+    B --> B3(High Variance)
+    B --> B4(High Bias)
+
+    A --> C(Metric & Measurement Issues)
+    C --> C1(Low Accuracy or High Error Rate)
+    C --> C2(Low Precision / Recall / F1)
+    C --> C3(Misaligned or Inappropriate Metric)
+    C --> C4(Incorrect Metric Implementation)
+
+    A --> D(Distribution / Drift Problems)
+    D --> D1(Covariate Shift)
+    D --> D2(Prior/Label Shift)
+    D --> D3(Concept Drift)
+    D --> D4(Temporal Mismatch or Evolving Data)
+
+    A --> E(Threshold / Calibration Mistakes)
+    E --> E1(Overconfidence)
+    E --> E2(Underconfidence)
+    E --> E3(Poor Calibration or Wrong Threshold)
+
+    A --> F(Cohort / Localized Failures)
+    F --> F1(Underperformance in Specific Segments)
+    F --> F2(Class Imbalance)
+    F --> F3(Rare Classes / Outliers)
+
+    A --> G(Explainability / Attribution Gaps)
+    G --> G1(Spurious Feature Correlations)
+    G --> G2(Over-Reliance on Certain Features)
+    G --> G3(Inconsistent Model Explanations)
+
+    A --> H(Fairness & Bias Issues)
+    H --> H1(Protected Group Discrimination)
+    H --> H2(Unintentional Protected Attribute Correlation)
+    H --> H3(Unfair Outcomes or Allocations)
+
+    A --> I(Labeling / Annotation Errors)
+    I --> I1(Noise in Ground Truth)
+    I --> I2(Mislabeling or Ambiguous Labels)
+    I --> I3(Incomplete or Partial Label Coverage)
+
+    A --> J(Data Leakage or Training-Serving Mismatch)
+    J --> J1(Feature Leakage from Future Data)
+    J --> J2(Mismatch Between Train & Production Features)
+    J --> J3(Improper Splitting Leading to Leakage)
+
+    A --> K(Adversarial Vulnerabilities)
+    K --> K1(Model Susceptibility to Adversarial Examples)
+    K --> K2(Malicious Data Injection)
+    K --> K3(Attacks on Model Interpretability)
