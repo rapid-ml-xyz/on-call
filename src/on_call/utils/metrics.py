@@ -17,7 +17,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-from constants import ClassificationMetrics, RegressionMetrics
+from ..constants import ClassificationMetrics, RegressionMetrics
 
 
 def _confusion_matrix_helper(y_true, y_pred, classes=None):
@@ -97,12 +97,12 @@ metrics_to_func = {
 
 
 def calculate_classification_metrics(
-    pred_y: pd.Series, true_y: pd.Series, **kwargs
+    true_y: pd.Series, pred_y: pd.Series, **kwargs
 ) -> dict[ClassificationMetrics, float]:
-    return {m: metrics_to_func[m](pred_y, true_y, **kwargs) for m in ClassificationMetrics}
+    return {m.value: metrics_to_func[m](true_y, pred_y, **kwargs) for m in ClassificationMetrics}
 
 
 def calculate_regression_metrics(
-    pred_y: pd.Series, true_y: pd.Series, **kwargs
+    true_y: pd.Series, pred_y: pd.Series, **kwargs
 ) -> dict[RegressionMetrics, float]:
-    return {m: metrics_to_func[m](pred_y, true_y, **kwargs) for m in RegressionMetrics}
+    return {m: metrics_to_func[m](true_y, pred_y, **kwargs) for m in RegressionMetrics}
