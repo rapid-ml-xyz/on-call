@@ -1,18 +1,42 @@
+from typing import Callable, Dict
+from ..modules import do_nothing
 from ..orchestrator.engines import LangGraphOrchestrator, LangGraphToolWrapper, LangGraphMessageState
 from ..orchestrator import EdgeConfig, NodeConfig, NodeType, RouteType
 from .enums import Step
-from .conditions import (route_pattern, route_cohort, route_distribution, route_metrics, route_root_cause)
+from .conditions import route_pattern, route_cohort, route_distribution, route_metrics, route_root_cause
 
 
 def setup_analysis_workflow() -> LangGraphOrchestrator:
     orchestrator = LangGraphOrchestrator()
 
+    node_functions: Dict[str, Callable[[LangGraphMessageState], LangGraphMessageState]] = {
+        Step.IMPACT_WINDOW.name: do_nothing,
+        Step.BASELINE.name: do_nothing,
+        Step.PATTERN.name: do_nothing,
+        Step.TIME.name: do_nothing,
+        Step.DRIFT.name: do_nothing,
+        Step.COHORT.name: do_nothing,
+        Step.FEATURE_DIST.name: do_nothing,
+        Step.GLOBAL_PERF.name: do_nothing,
+        Step.DISTRIBUTION_SHIFT.name: do_nothing,
+        Step.FEATURE_IMPORTANCE.name: do_nothing,
+        Step.ERROR_ANALYSIS.name: do_nothing,
+        Step.GLOBAL_METRICS.name: do_nothing,
+        Step.METRIC_FOCUSED.name: do_nothing,
+        Step.MODEL_BEHAVIOR.name: do_nothing,
+        Step.LOCAL_EXPLANATION.name: do_nothing,
+        Step.ROOT_CAUSE.name: do_nothing,
+        Step.RECOMMENDATIONS.name: do_nothing,
+        Step.ITERATE_COHORT.name: do_nothing
+    }
+
+    # Configure nodes with actual functions
     nodes = [
         NodeConfig[LangGraphMessageState, LangGraphToolWrapper](
-            name=stage.name,
+            name=step.name,
             node_type=NodeType.FUNCTION,
-            function=lambda x: x
-        ) for stage in Step
+            function=node_functions[step.name]
+        ) for step in Step
     ]
     orchestrator.configure_nodes(nodes)
 
