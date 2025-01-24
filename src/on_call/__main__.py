@@ -1,6 +1,6 @@
 from typing import Dict, List
 from langchain_core.messages import BaseMessage, HumanMessage
-from .workflow.setup import setup_analysis_workflow
+from workflow.setup import setup_analysis_workflow
 
 
 def run_analysis(initial_data: str) -> Dict[str, List[BaseMessage]]:
