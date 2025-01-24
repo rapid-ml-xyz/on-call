@@ -1,6 +1,7 @@
-from typing import Any, Dict, Generic, List, Protocol, TypeVar, runtime_checkable, Callable
+from typing import Any, Dict, Generic, List, Protocol, TypeVar, runtime_checkable, Callable, Union
 from enum import Enum
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 S = TypeVar('S')
 T = TypeVar('T')
@@ -9,6 +10,11 @@ T = TypeVar('T')
 class NodeType(Enum):
     AGENT = "agent"
     FUNCTION = "function"
+
+
+class RouteType(Enum):
+    DYNAMIC = "dynamic"
+    AGENTIC = "agentic"
 
 
 @runtime_checkable
@@ -20,6 +26,32 @@ class Tool(Protocol):
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the tool functionality."""
         ...
+
+
+@runtime_checkable
+class RoutingAgent(Protocol):
+    """Protocol for agents that make routing decisions."""
+    def decide_route(self, state: Any) -> str:
+        """Decide which route to take based on the current state."""
+        ...
+
+
+RouteCondition = Union[Callable[[Any], Any], RoutingAgent]
+
+
+@dataclass
+class EdgeConfig:
+    """Configuration for conditional edges between nodes."""
+    route_type: RouteType
+    condition: RouteCondition
+    routes: Dict[Any, str]
+
+    def __post_init__(self):
+        if self.route_type == RouteType.AGENTIC and not isinstance(self.condition, RoutingAgent):
+            raise ValueError("Agentic routing requires a RoutingAgent condition")
+
+        if self.route_type == RouteType.DYNAMIC and not callable(self.condition):
+            raise ValueError("Dynamic routing requires a callable condition")
 
 
 class WorkflowState(Generic[S]):
@@ -69,7 +101,6 @@ class NodeConfig(Generic[S, T]):
     def __init__(
         self,
         name: str,
-        next_node: str | None,
         node_type: NodeType = NodeType.AGENT,
         allowed_tools: List[str] | None = None,
         agent_config: Dict[str, Any] | None = None,
@@ -77,7 +108,6 @@ class NodeConfig(Generic[S, T]):
         function: Callable[[WorkflowState[S]], WorkflowState[S]] | None = None
     ):
         self.name = name
-        self.next_node = next_node
         self.node_type = node_type
         self.agent_config = agent_config
         self.agent = agent
