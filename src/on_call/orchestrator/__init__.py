@@ -1,5 +1,5 @@
 from .base import BaseOrchestrator
-from .models import Agent, EdgeConfig, NodeConfig, NodeType, RouteType, Tool, WorkflowState
+from .models import Agent, EdgeConfig, NodeConfig, NodeType, RoutingAgent, RouteType, Tool, WorkflowState
 
 __all__ = [
     'BaseOrchestrator',
@@ -7,6 +7,7 @@ __all__ = [
     'EdgeConfig',
     'NodeConfig',
     'NodeType',
+    'RoutingAgent',
     'RouteType',
     'Tool',
     'WorkflowState'
