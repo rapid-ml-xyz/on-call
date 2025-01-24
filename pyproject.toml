@@ -27,6 +27,8 @@ dependencies = [
     "nbformat>=5.9.0",
     "pydantic>=1.10.0",
     "jupyter_client>=8.0.0",
+    fastapi = ">=0.104.0"
+    uvicorn = ">=0.24.0" 
 ]
 
 [project.optional-dependencies]
@@ -87,4 +89,4 @@ exclude_lines = [
 ]
 
 [tool.flake8]
-max-line-length = 90 
+max-line-length = 90
