@@ -1,9 +1,9 @@
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.tools import BaseTool
 from src.on_call.logger import logging
 from ..base import BaseOrchestrator
-from ..models import Agent, NodeConfig, NodeType, Tool, WorkflowState
+from ..models import Agent, EdgeConfig, NodeConfig, NodeType, RouteType, Tool, WorkflowState
 
 LangGraphMessageState = Dict[str, List[BaseMessage]]
 
@@ -43,7 +43,6 @@ class LangGraphAgentFactory:
 
     @staticmethod
     def create_simple_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
-        """Create a simple agent that executes one tool call."""
         from langchain.agents import ZeroShotAgent
         from langchain.agents import AgentExecutor
 
@@ -83,22 +82,6 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
         self.agent_factory = LangGraphAgentFactory()
         self._graph = StateGraph(MessagesState)
 
-    def configure_nodes(self, nodes: List[NodeConfig]) -> None:
-        from langgraph.graph import END
-
-        for node in nodes:
-            if node.node_type == NodeType.AGENT:
-                node_tools = [self.tools[tool_name] for tool_name in node.allowed_tools]
-                node.agent = self.create_agent(node_tools, node.agent_config)
-
-            self.nodes[node.name] = node
-            self._add_node_to_graph(node)
-
-            if node.next_node is None:
-                self._graph.add_edge(node.name, END)
-            else:
-                self._graph.add_edge(node.name, node.next_node)
-
     def create_agent(self, tools: List[LangGraphToolWrapper], agent_config: Dict[str, Any]) \
             -> Agent[LangGraphMessageState]:
         if agent_config.get("type", "react") == "simple":
@@ -116,7 +99,6 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
 
             logging.info(f"Executing node: {node.name}")
             result = workflow_node.invoke(workflow_state)
-            goto = node.next_node
 
             if node.node_type == NodeType.AGENT and result.state["messages"]:
                 last_message = result.state["messages"][-1].content
@@ -126,11 +108,19 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
                 )
 
             return {
-                "messages": result.state["messages"],
-                "__goto__": goto
+                "messages": result.state["messages"]
             }
 
         self._graph.add_node(node.name, node_fn)
+
+    def _add_edge_to_graph(self, source: str, edge: EdgeConfig) -> None:
+        if edge.route_type == RouteType.AGENTIC:
+            def route_fn(state):
+                return edge.condition.decide_route(state)
+        else:
+            route_fn = edge.condition
+
+        self._graph.add_conditional_edges(source, route_fn, edge.routes)
 
     def set_entry_point(self, node_name: str) -> None:
         from langgraph.graph import START
