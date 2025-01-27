@@ -1,0 +1,34 @@
+%% Use Case: E-commerce Product Recommendation System
+%% Problem: Sudden drop in Click-Through Rate (CTR)
+%% Impact: CTR dropped from 12% to 8% overnight
+%% Initial Alert: Triggered by 30% deviation from baseline
+%% Resolution: Viewport normalization for mobile devices
+
+graph TD
+    subgraph Case Details
+        H1[E-commerce Product Recommendation System]
+        H2[Problem: Sudden CTR Drop]
+        H3[Impact: 12% → 8% CTR]
+        H4[Alert: 30% Baseline Deviation]
+    end
+
+    A[Performance Drop: CTR 12% → 8%] --> B[Define Impact Window]
+    B[2AM PST Drop Start] --> C[Compare with Previous Week]
+
+    C --> D[Pattern: Sudden Drop]
+    D --> E[Time-based Analysis]
+
+    E --> G[Cohort Analysis]
+
+    G -->|Mobile Users Affected| H[Feature Distribution Analysis]
+
+    H --> J[Distribution Shift?]
+    J -->|Yes: iOS Viewport Change| K[Feature Importance Analysis]
+
+    K --> P[Local Explanation: Viewport Weight]
+
+    P --> Q[Root Cause Found]
+    Q --> R[Fix: Add Viewport Normalization]
+
+    style A fill:#f44336,color:#fff
+    style R fill:#4caf50,color:#fff

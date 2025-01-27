@@ -1,0 +1,34 @@
+%% Use Case: Fraud Detection System
+%% Problem: Surge in legitimate transaction declines
+%% Impact: False positive rate increased from 2% to 5%
+%% Initial Alert: Customer service reports during holiday season
+%% Resolution: Short-term threshold adjustment and long-term seasonal features
+
+graph TD
+    subgraph Case Details
+        H1[Fraud Detection System]
+        H2[Problem: Legitimate Transaction Declines]
+        H3[Impact: False Positives 2% → 5%]
+        H4[Alert: Customer Service Reports]
+    end
+
+    A[False Positives: 2% → 5%] --> B[Define Impact Window]
+    B[Holiday Season Spike] --> C[Compare Previous Seasons]
+
+    C --> D[Pattern: Mixed]
+    D --> E[Time-based Analysis]
+    D --> F[Drift Analysis]
+
+    E & F --> G[Cohort Analysis]
+
+    G -->|Cross-border & New Merchants| L[Error Analysis]
+
+    L --> P[Transaction Velocity Issue]
+
+    P --> Q[Root Cause Found]
+    Q --> R1[Short-term: Adjust Thresholds]
+    Q --> R2[Long-term: Add Seasonal Features]
+
+    style A fill:#f44336,color:#fff
+    style R1 fill:#ffa726,color:#fff
+    style R2 fill:#4caf50,color:#fff
