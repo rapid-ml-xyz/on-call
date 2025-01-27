@@ -1,0 +1,34 @@
+%% Use Case: Content Recommendation System
+%% Problem: Decreased recommendation diversity
+%% Impact: Same items repeatedly recommended across users
+%% Initial Alert: Content team noticed lack of variety
+%% Resolution: Implementation of diversity constraints
+
+graph TD
+    subgraph Case Details
+        H1[Content Recommendation System]
+        H2[Problem: Low Recommendation Diversity]
+        H3[Impact: Repeated Items Across Users]
+        H4[Alert: Content Team Observation]
+    end
+
+    A[Diversity Metrics Declining] --> B[Define Impact Window]
+    B[Two Week Window] --> C[Compare Diversity Baseline]
+
+    C --> D[Pattern: System-wide]
+
+    D --> G[Cohort Analysis]
+
+    G -->|All Users Affected| I[Global Performance Analysis]
+
+    I --> M[Global Metrics Review]
+
+    M -->|Diversity Specific Drop| N[Metric-Focused Analysis]
+
+    N --> P[Feedback Loop Identified]
+
+    P --> Q[Root Cause Found]
+    Q --> R[Add Diversity Constraints]
+
+    style A fill:#f44336,color:#fff
+    style R fill:#4caf50,color:#fff

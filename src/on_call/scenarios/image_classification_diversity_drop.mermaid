@@ -1,0 +1,37 @@
+%% Use Case: Image Classification Model
+%% Problem: Overall accuracy degradation
+%% Impact: Accuracy dropped from 94% to 89%
+%% Initial Alert: System monitoring detected global performance drop
+%% Resolution: Updated preprocessing pipeline for lighting conditions
+
+graph TD
+    subgraph Case Details
+        H1[Image Classification Model]
+        H2[Problem: Accuracy Degradation]
+        H3[Impact: Accuracy 94% → 89%]
+        H4[Alert: System Monitoring]
+    end
+
+    A[Accuracy: 94% → 89%] --> B[Define Impact Window]
+    B[One Week Window] --> C[Compare Monthly Baseline]
+
+    C --> D[Pattern: No Clear Pattern]
+
+    D --> G[Initial Cohort Analysis]
+
+    G -->|No Clear Segments| I[Global Performance Analysis]
+
+    I --> M[Global Metrics Review]
+    M -->|Overall Degradation| O[Model Behavior Analysis]
+
+    O --> P[No Clear Cause]
+
+    P --> Q[Root Cause Unknown]
+    Q --> S[New Cohort Analysis]
+
+    S -->|Segment by Confidence| G2[Second Cohort Analysis]
+    G2 -->|Light Conditions| H[Feature Analysis]
+    H --> R[Fix: Update Preprocessing]
+
+    style A fill:#f44336,color:#fff
+    style R fill:#4caf50,color:#fff

@@ -1,0 +1,36 @@
+%% Use Case: Credit Risk Assessment Model
+%% Problem: Increasing false positives in risk assessment
+%% Impact: 15% accuracy degradation over 3 months
+%% Initial Alert: Risk team noticed pattern in specific segments
+%% Resolution: Model update with new credit features
+
+graph TD
+    subgraph Case Details
+        H1[Credit Risk Assessment Model]
+        H2[Problem: Rising False Positives]
+        H3[Impact: 15% Accuracy Loss]
+        H4[Alert: Risk Team Pattern Detection]
+    end
+
+    A[Performance Drop: 15% Accuracy Loss] --> B[Define Impact Window]
+    B[3-Month Sliding Window] --> C[Compare Year-over-Year]
+
+    C --> D[Pattern: Gradual Decline]
+    D --> F[Drift Analysis]
+
+    F --> G[Cohort Analysis]
+
+    G -->|Thin-File Customers| H[Feature Distribution Analysis]
+
+    H --> J[Distribution Shift?]
+    J -->|Yes: New Credit Patterns| K[Feature Importance Analysis]
+
+    K --> O[Model Behavior Analysis]
+
+    O --> P[SHAP Analysis Results]
+
+    P --> Q[Root Cause Found]
+    Q --> R[Fix: Add New Credit Features]
+
+    style A fill:#f44336,color:#fff
+    style R fill:#4caf50,color:#fff
