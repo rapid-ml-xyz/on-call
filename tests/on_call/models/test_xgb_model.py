@@ -159,7 +159,7 @@ def test_model_save_load(test_data, model_params, tmp_path):
         model_path=str(model_path),
     )
 
-    loaded_model.load()
+    loaded_model.load_model()
     loaded_predictions = loaded_model.model.predict(model.X_test)
 
     # Check if predictions match
