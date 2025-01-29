@@ -50,6 +50,8 @@ if __name__ == "__main__":
     _task_params, _train_df, _val_df, _test_df = prepare_data(_dataset, _task, _subsample)
 
     loaded_pipeline = ModelPipeline.load('saved_pipelines/rel_hm_user_churn_lgbm_20k.joblib')
+    baseline = loaded_pipeline.get_metrics(_val_df)
+    print(baseline)
 
     data = "Performance metrics show a sudden drop in model accuracy last week"
     response = run_analysis(data)
