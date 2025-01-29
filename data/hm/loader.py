@@ -7,6 +7,7 @@ from torch_frame import TaskType, stype
 from torch_frame.data import Dataset
 from torch_frame.typing import Metric
 
+CSV_PATH = 'data/hm/csv'
 DATASET_TO_DB = {'rel-hm': 'data/hm/hm.db'}
 
 TASK_PARAMS = {
@@ -58,7 +59,6 @@ def prepare_data(dataset: str, task: str, subsample: int = 0, init_db: bool = Fa
     if init_db:
         db_setup(dataset, DATASET_TO_DB[dataset])
 
-    drop_cols = drop_cols or []
     full_task_name = f'{dataset}-{task}'
     task_params = TASK_PARAMS[full_task_name]
 
@@ -84,18 +84,13 @@ def prepare_data(dataset: str, task: str, subsample: int = 0, init_db: bool = Fa
     test_df, test_task_df = get_matching_rows(test_df, test_task_df, task_params['identifier_cols'])
 
     col_to_stype = task_to_stypes[full_task_name]
-    drop_cols = task_params['identifier_cols'] + drop_cols
-
-    train_df = train_df.drop(drop_cols, axis=1)
-    val_df = val_df.drop(drop_cols, axis=1)
-    test_df = test_df.drop(drop_cols, axis=1)
-
-    for col in drop_cols:
-        if col in col_to_stype:
-            del col_to_stype[col]
 
     if subsample > 0 and not generate_feats:
         train_df = train_df.head(subsample)
+
+    train_df.to_csv(f'{CSV_PATH}/train.csv')
+    val_df.to_csv(f'{CSV_PATH}/val.csv')
+    test_df.to_csv(f'{CSV_PATH}/test.csv')
 
     for k, v in col_to_stype.items():
         if v == stype.text_embedded:
