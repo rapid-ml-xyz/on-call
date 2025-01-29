@@ -10,7 +10,9 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
 from packaging import version
-from torch_frame import stype
+from torch_frame import stype, TaskType
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, \
+    mean_squared_error, mean_absolute_error, r2_score
 
 if version.parse(sklearn.__version__) < version.parse('1.2'):
     ohe_params = {"sparse": False}
@@ -165,3 +167,41 @@ class ModelPipeline:
             
         except Exception as e:
             raise ValueError(f"Failed to load pipeline: {str(e)}")
+
+    def get_metrics(self, df: pd.DataFrame, metrics: Optional[List[str]] = None) -> Dict[str, float]:
+        X, y_true = self.prepare_data(df)
+        if y_true is None:
+            raise ValueError("Target column not found in dataframe")
+
+        y_pred = self.predict(df)
+        task_type = self._model.task_params['task_type']
+
+        if metrics is None:
+            if task_type == TaskType.BINARY_CLASSIFICATION:
+                metrics = ['accuracy', 'precision', 'recall', 'f1']
+            elif task_type == TaskType.REGRESSION:
+                metrics = ['mse', 'mae', 'r2']
+
+        results = {}
+        for metric in metrics:
+            try:
+                if metric == 'accuracy':
+                    results[metric] = accuracy_score(y_true, y_pred)
+                elif metric == 'precision':
+                    results[metric] = precision_score(y_true, y_pred, average='weighted')
+                elif metric == 'recall':
+                    results[metric] = recall_score(y_true, y_pred, average='weighted')
+                elif metric == 'f1':
+                    results[metric] = f1_score(y_true, y_pred, average='weighted')
+                elif metric == 'mse':
+                    results[metric] = mean_squared_error(y_true, y_pred)
+                elif metric == 'mae':
+                    results[metric] = mean_absolute_error(y_true, y_pred)
+                elif metric == 'r2':
+                    results[metric] = r2_score(y_true, y_pred)
+                else:
+                    raise ValueError(f"Unsupported metric: {metric}")
+            except Exception as e:
+                results[metric] = f"Error calculating {metric}: {str(e)}"
+
+        return results
