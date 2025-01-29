@@ -1,10 +1,8 @@
 import duckdb
 
-from .inferred_stypes import task_to_stypes
 from .utils import db_setup, render_jinja_sql
 from relbench.tasks import get_task
-from torch_frame import TaskType, stype
-from torch_frame.data import Dataset
+from torch_frame import TaskType
 from torch_frame.typing import Metric
 
 CSV_PATH = 'data/hm/csv'
@@ -54,8 +52,8 @@ def get_matching_rows(feats_df, labels_df, identifier_cols, n_rows=1000):
     return matched_feats.reset_index(drop=True), matched_labels.reset_index(drop=True)
 
 
-def prepare_data(dataset: str, task: str, subsample: int = 0, init_db: bool = False,
-                 generate_feats: bool = False, drop_cols: list = None) -> tuple:
+def prepare_data(dataset: str, task: str, subsample: int = 0,
+                 init_db: bool = False, generate_feats: bool = False) -> tuple:
     if init_db:
         db_setup(dataset, DATASET_TO_DB[dataset])
 
@@ -83,8 +81,6 @@ def prepare_data(dataset: str, task: str, subsample: int = 0, init_db: bool = Fa
     val_df, val_task_df = get_matching_rows(val_df, val_task_df, task_params['identifier_cols'])
     test_df, test_task_df = get_matching_rows(test_df, test_task_df, task_params['identifier_cols'])
 
-    col_to_stype = task_to_stypes[full_task_name]
-
     if subsample > 0 and not generate_feats:
         train_df = train_df.head(subsample)
 
@@ -92,12 +88,4 @@ def prepare_data(dataset: str, task: str, subsample: int = 0, init_db: bool = Fa
     val_df.to_csv(f'{CSV_PATH}/val.csv')
     test_df.to_csv(f'{CSV_PATH}/test.csv')
 
-    for k, v in col_to_stype.items():
-        if v == stype.text_embedded:
-            raise NotImplementedError('Embeddings for text columns not supported for speed considerations.')
-
-    train_dset = Dataset(train_df, col_to_stype=col_to_stype, target_col=task_params['target_col']).materialize()
-    val_tf = train_dset.convert_to_tensor_frame(val_df)
-    test_tf = train_dset.convert_to_tensor_frame(test_df)
-
-    return task_obj, task_params, train_dset, val_tf, test_tf, val_task_df
+    return task_obj, task_params, train_df, val_df, test_df

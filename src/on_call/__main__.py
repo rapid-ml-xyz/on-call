@@ -31,9 +31,9 @@ if __name__ == "__main__":
     """
 
     # TODO: Come up with a dynamic way of passing True for init_db & generate_feats first time round
-    gbdt, val_metrics, test_pred = get_model(
+    pipeline = get_model(
         dataset='rel-hm', task='user-churn', subsample=20_000, init_db=False, generate_feats=False)
-    print(val_metrics)
+    print(pipeline)
 
     data = "Performance metrics show a sudden drop in model accuracy last week"
     response = run_analysis(data)
