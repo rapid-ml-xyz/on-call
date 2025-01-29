@@ -1,5 +1,9 @@
+import os
+import pandas as pd
+import sklearn
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+from joblib import dump, load
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -7,8 +11,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
 from packaging import version
 from torch_frame import stype
-import pandas as pd
-import sklearn
 
 if version.parse(sklearn.__version__) < version.parse('1.2'):
     ohe_params = {"sparse": False}
@@ -38,13 +40,15 @@ class ModelPipeline:
         self,
         model,
         col_to_stype: Dict[str, stype],
-        df: pd.DataFrame
+        df: pd.DataFrame,
+        skip_build: bool = False
     ):
         self._model = model
         self._col_to_stype = col_to_stype
         self._pipeline = None
         self._metadata = self._create_pipeline_metadata(df)
-        self._build_pipeline()
+        if not skip_build:
+            self._build_pipeline()
 
     @property
     def model(self):
@@ -63,20 +67,19 @@ class ModelPipeline:
         return self._metadata
 
     def _create_pipeline_metadata(self, df: pd.DataFrame) -> PipelineMetadata:
-        exclude_cols = (self._model.task_params['identifier_cols'] +
-                       [self._model.task_params['target_col']])
+        exclude_cols = (self._model.task_params['identifier_cols'] + [self._model.task_params['target_col']])
         feature_cols = [col for col in df.columns if col not in exclude_cols]
-
+        
         numerical_cols = [
-            col for col, st in self._col_to_stype.items()
+            col for col, st in self._col_to_stype.items() 
             if st == stype.numerical and col in feature_cols
         ]
         categorical_cols = [
-            col for col, st in self._col_to_stype.items()
+            col for col, st in self._col_to_stype.items() 
             if st == stype.categorical and col in feature_cols
         ]
         timestamp_cols = [
-            col for col, st in self._col_to_stype.items()
+            col for col, st in self._col_to_stype.items() 
             if st == stype.timestamp and col in feature_cols
         ]
 
@@ -96,14 +99,14 @@ class ModelPipeline:
     def _build_pipeline(self):
         transformers = []
 
-        if self.metadata.numerical_columns:
+        if self._metadata.numerical_columns:
             num_pipe = Pipeline([
                 ('num_imputer', SimpleImputer(strategy='median')),
                 ('num_scaler', StandardScaler())
             ])
-            transformers.append(('num_pipe', num_pipe, self.metadata.numerical_columns))
+            transformers.append(('num_pipe', num_pipe, self._metadata.numerical_columns))
 
-        cat_cols = self.metadata.categorical_columns + self.metadata.timestamp_columns
+        cat_cols = self._metadata.categorical_columns + self._metadata.timestamp_columns
         if cat_cols:
             cat_pipe = Pipeline([
                 ('cat_imputer', SimpleImputer(strategy='constant', fill_value='missing')),
@@ -133,3 +136,32 @@ class ModelPipeline:
     def predict(self, df: pd.DataFrame):
         X, _ = self.prepare_data(df)
         return self._pipeline.predict(X)
+        
+    def save(self, filepath: str) -> None:
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        dump({
+            'pipeline': self._pipeline,
+            'metadata': self._metadata,
+            'col_to_stype': self._col_to_stype,
+            'model': self._model,
+        }, filepath)
+    
+    @classmethod
+    def load(cls, filepath: str) -> 'ModelPipeline':
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"No file found at {filepath}")
+            
+        try:
+            saved_data = load(filepath)
+            pipeline = cls(
+                model=saved_data['model'],
+                col_to_stype=saved_data['col_to_stype'],
+                df=pd.DataFrame(),
+                skip_build=True
+            )
+            pipeline._pipeline = saved_data['pipeline']
+            pipeline._metadata = saved_data['metadata']
+            return pipeline
+            
+        except Exception as e:
+            raise ValueError(f"Failed to load pipeline: {str(e)}")

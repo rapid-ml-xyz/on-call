@@ -1,4 +1,6 @@
 import duckdb
+import pandas as pd
+import os
 
 from .utils import db_setup, render_jinja_sql
 from relbench.tasks import get_task
@@ -54,6 +56,21 @@ def get_matching_rows(feats_df, labels_df, identifier_cols, n_rows=1000):
 
 def prepare_data(dataset: str, task: str, subsample: int = 0,
                  init_db: bool = False, generate_feats: bool = False) -> tuple:
+
+    csv_files = ['train.csv', 'val.csv', 'test.csv']
+    all_files_exist = all(
+        os.path.exists(os.path.join(CSV_PATH, f))
+        for f in csv_files
+    )
+
+    if all_files_exist:
+        train_df = pd.read_csv(os.path.join(CSV_PATH, 'train.csv'), index_col=0)
+        val_df = pd.read_csv(os.path.join(CSV_PATH, 'val.csv'), index_col=0)
+        test_df = pd.read_csv(os.path.join(CSV_PATH, 'test.csv'), index_col=0)
+
+        full_task_name = f'{dataset}-{task}'
+        return TASK_PARAMS[full_task_name], train_df, val_df, test_df
+
     if init_db:
         db_setup(dataset, DATASET_TO_DB[dataset])
 

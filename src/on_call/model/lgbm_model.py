@@ -1,9 +1,17 @@
+import os
 from dataclasses import dataclass
 from typing import Dict, Optional
 from torch_frame import TaskType
 from lightgbm import LGBMClassifier, LGBMRegressor
 
 SEED_VALUE = 42
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
+os.environ['OMP_THREAD_LIMIT'] = '1'
+os.environ['OMP_DYNAMIC'] = 'FALSE'
+os.environ['OMP_MAX_ACTIVE_LEVELS'] = '1'
 
 
 @dataclass
