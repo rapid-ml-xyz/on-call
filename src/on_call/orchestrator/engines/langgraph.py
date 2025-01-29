@@ -1,6 +1,10 @@
 from typing import Any, Dict, List
+from langchain.agents import ZeroShotAgent
+from langchain.agents import AgentExecutor
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.tools import BaseTool
+from langgraph.graph import MessagesState, StateGraph, START
+from langgraph.prebuilt import create_react_agent
 from src.on_call.logger import logging
 from ..base import BaseOrchestrator
 from ..models import Agent, EdgeConfig, NodeConfig, NodeType, RouteType, Tool, WorkflowState
@@ -23,7 +27,7 @@ class LangGraphToolWrapper:
 class LangGraphAgentFactory:
     @staticmethod
     def create_react_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
-        from langgraph.prebuilt import create_react_agent
+
 
         logging.info("Creating react agent")
         llm = agent_config["llm"]
@@ -43,8 +47,7 @@ class LangGraphAgentFactory:
 
     @staticmethod
     def create_simple_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
-        from langchain.agents import ZeroShotAgent
-        from langchain.agents import AgentExecutor
+
 
         logging.info("Creating simple agent")
         llm = agent_config["llm"]
@@ -78,7 +81,6 @@ class LangGraphAgentFactory:
 class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToolWrapper]):
     def __init__(self):
         super().__init__()
-        from langgraph.graph import StateGraph, MessagesState
         self.agent_factory = LangGraphAgentFactory()
         self._graph = StateGraph(MessagesState)
 
@@ -123,7 +125,6 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
         self._graph.add_conditional_edges(source, route_fn, edge.routes)
 
     def set_entry_point(self, node_name: str) -> None:
-        from langgraph.graph import START
         if node_name not in self.nodes:
             raise ValueError(f"Node {node_name} not found")
         self.entry_point = node_name
