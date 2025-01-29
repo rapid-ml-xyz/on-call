@@ -88,4 +88,4 @@ def prepare_data(dataset: str, task: str, subsample: int = 0,
     val_df.to_csv(f'{CSV_PATH}/val.csv')
     test_df.to_csv(f'{CSV_PATH}/test.csv')
 
-    return task_obj, task_params, train_df, val_df, test_df
+    return task_params, train_df, val_df, test_df
