@@ -90,7 +90,7 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
 
         workflow_node = node.create_node()
 
-        def node_fn(state: Dict[str, Any]) -> Dict[str, Any]:
+        def node_fn(state: LangGraphMessageState) -> LangGraphMessageState:
             if node.node_type == NodeType.AGENT and "messages" not in state:
                 raise ValueError(f"Agent node {node.name} requires 'messages' in state")
 
@@ -116,7 +116,7 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
         self.entry_point = node_name
         self._graph.add_edge(START, node_name)
 
-    def run(self, initial_state: Dict[str, Any]) -> LangGraphMessageState:
+    def run(self, initial_state: LangGraphMessageState) -> LangGraphMessageState:
         if not self.entry_point:
             raise ValueError("Entry point not set")
 
