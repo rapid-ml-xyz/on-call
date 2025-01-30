@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from data.hm.loader import fetch_data
 from data.hm.inferred_stypes import task_to_stypes
 from typing import Dict, List
@@ -10,6 +11,8 @@ SUBSAMPLE = 20_000
 DATASET = 'rel-hm'
 TASK = 'user-churn'
 PIPELINE_PATH = 'saved_pipelines/rel_hm_user_churn_lgbm_20k.joblib'
+
+load_dotenv()
 
 
 def _generate_pipeline(_task_params, _train_df):
@@ -26,7 +29,11 @@ def _generate_pipeline(_task_params, _train_df):
 
 def run_analysis(initial_data: str) -> Dict[str, List[BaseMessage]]:
     """Run the performance analysis workflow"""
-    messages = [HumanMessage(content=initial_data)]
+    messages = {
+        "messages": initial_data,
+        "foo": "bar",
+        "baz": "qux"
+    }
     workflow = setup_analysis_workflow()
     workflow.visualize_graph()
     return workflow.run(messages)
