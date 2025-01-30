@@ -1,10 +1,9 @@
 from dotenv import load_dotenv
 from data.hm.loader import fetch_data
 from data.hm.inferred_stypes import task_to_stypes
-from typing import Dict, List
-from langchain_core.messages import BaseMessage, HumanMessage
 from .model.lgbm_model import LGBMModel
 from .model_pipeline import ModelPipeline
+from .orchestrator.engines import LangGraphMessageState
 from .workflow.setup import setup_analysis_workflow
 
 SUBSAMPLE = 20_000
@@ -27,7 +26,7 @@ def _generate_pipeline(_task_params, _train_df):
     return _pipeline
 
 
-def run_analysis(initial_data: str) -> Dict[str, List[BaseMessage]]:
+def run_analysis(initial_data: str) -> LangGraphMessageState:
     """Run the performance analysis workflow"""
     messages = {
         "messages": initial_data,
