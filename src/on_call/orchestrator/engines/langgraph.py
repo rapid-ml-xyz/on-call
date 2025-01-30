@@ -1,15 +1,14 @@
 from typing import Any, Dict, List
 from langchain.agents import ZeroShotAgent
 from langchain.agents import AgentExecutor
-from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.tools import BaseTool
-from langgraph.graph import MessagesState, StateGraph, START
+from langgraph.graph import StateGraph, START
 from langgraph.prebuilt import create_react_agent
 from src.on_call.logger import logging
 from ..base import BaseOrchestrator
 from ..models import Agent, EdgeConfig, NodeConfig, NodeType, RouteType, Tool, WorkflowState
 
-LangGraphMessageState = Dict[str, List[BaseMessage]]
+LangGraphMessageState = Dict[str, Any]
 
 
 class LangGraphToolWrapper:
@@ -65,11 +64,10 @@ class LangGraphAgentFactory:
 
         class WrappedSimpleAgent:
             def invoke(self, state: WorkflowState[LangGraphMessageState]) -> WorkflowState[LangGraphMessageState]:
-                messages = state.state["messages"]
-                last_message = messages[-1].content
-                result = agent_executor.invoke({"input": last_message})
-                messages.append(HumanMessage(content=str(result["output"])))
-                return WorkflowState({"messages": messages})
+                input_text = state.state.get("input", "")
+                result = agent_executor.invoke({"input": input_text})
+                state.state["output"] = str(result["output"])
+                return WorkflowState(state.state)
 
         return WrappedSimpleAgent()
 
@@ -78,7 +76,7 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
     def __init__(self):
         super().__init__()
         self.agent_factory = LangGraphAgentFactory()
-        self._graph = StateGraph(MessagesState)
+        self._graph = StateGraph(LangGraphMessageState)
 
     def create_agent(self, tools: List[LangGraphToolWrapper], agent_config: Dict[str, Any]) \
             -> Agent[LangGraphMessageState]:
@@ -92,22 +90,14 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
 
         workflow_node = node.create_node()
 
-        def node_fn(state: Dict[str, List[BaseMessage]]) -> Dict[str, Any]:
-            workflow_state = WorkflowState(state)
+        def node_fn(state: Dict[str, Any]) -> Dict[str, Any]:
+            if node.node_type == NodeType.AGENT and "messages" not in state:
+                raise ValueError(f"Agent node {node.name} requires 'messages' in state")
 
+            workflow_state = WorkflowState(state)
             logging.info(f"Executing node: {node.name}")
             result = workflow_node.invoke(workflow_state)
-
-            if node.node_type == NodeType.AGENT and result.state["messages"]:
-                last_message = result.state["messages"][-1].content
-                result.state["messages"][-1] = HumanMessage(
-                    content=last_message,
-                    name=node.name
-                )
-
-            return {
-                "messages": result.state["messages"]
-            }
+            return result.state
 
         self._graph.add_node(node.name, node_fn)
 
@@ -126,12 +116,11 @@ class LangGraphOrchestrator(BaseOrchestrator[LangGraphMessageState, LangGraphToo
         self.entry_point = node_name
         self._graph.add_edge(START, node_name)
 
-    def run(self, messages: List[BaseMessage]) -> LangGraphMessageState:
+    def run(self, initial_state: Dict[str, Any]) -> LangGraphMessageState:
         if not self.entry_point:
             raise ValueError("Entry point not set")
 
         compiled_graph = self._graph.compile()
-        initial_state = {"messages": messages}
         result = compiled_graph.invoke(initial_state)
         return result
 
