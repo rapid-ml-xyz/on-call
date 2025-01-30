@@ -78,13 +78,13 @@ def prepare_data(dataset: str, task: str, subsample: int = 0,
     task_params = TASK_PARAMS[full_task_name]
 
     task_obj = get_task(dataset, task, download=True)
-    val_task_df = task_obj.get_table("val").df
-    test_task_df = task_obj.get_table("test").df
+    val_task_df = task_obj.get_table("val", mask_input_cols=False).df
+    test_task_df = task_obj.get_table("test", mask_input_cols=False).df
 
     conn = duckdb.connect(DATASET_TO_DB[dataset])
 
     if generate_feats:
-        with open('build/hm/feats.sql') as f:
+        with open('data/hm/feats.sql') as f:
             template = f.read()
         for s in ['train', 'val', 'test']:
             query = render_jinja_sql(template, dict(set=s, subsample=subsample))

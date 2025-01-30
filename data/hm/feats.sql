@@ -89,9 +89,7 @@ txns_all_time_window as materialized (
 select
     labels.customer_id,
     labels.timestamp,
-    {% if set != 'test' +%} -- noqa
-        labels.churn,
-    {% endif %}
+    labels.churn,
     -- date features
     date_part('week', labels.timestamp) as week_of_year,
     date_part('month', labels.timestamp) as month_of_year,
