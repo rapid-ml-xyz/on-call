@@ -54,8 +54,8 @@ def get_matching_rows(feats_df, labels_df, identifier_cols, n_rows=1000):
     return matched_feats.reset_index(drop=True), matched_labels.reset_index(drop=True)
 
 
-def prepare_data(dataset: str, task: str, subsample: int = 0,
-                 init_db: bool = False, generate_feats: bool = False) -> tuple:
+def fetch_data(dataset: str, task: str, subsample: int = 0,
+               init_db: bool = False, generate_feats: bool = False) -> tuple:
 
     csv_files = ['train.csv', 'val.csv', 'test.csv']
     all_files_exist = all(

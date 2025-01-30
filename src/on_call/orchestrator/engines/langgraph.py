@@ -27,8 +27,6 @@ class LangGraphToolWrapper:
 class LangGraphAgentFactory:
     @staticmethod
     def create_react_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
-
-
         logging.info("Creating react agent")
         llm = agent_config["llm"]
         langchain_tools = [
@@ -47,8 +45,6 @@ class LangGraphAgentFactory:
 
     @staticmethod
     def create_simple_agent(tools: List[Tool], agent_config: Dict[str, Any]) -> Agent[LangGraphMessageState]:
-
-
         logging.info("Creating simple agent")
         llm = agent_config["llm"]
         langchain_tools = [

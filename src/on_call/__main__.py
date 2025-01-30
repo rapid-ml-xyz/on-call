@@ -1,4 +1,4 @@
-from data.hm.loader import prepare_data
+from data.hm.loader import fetch_data
 from data.hm.inferred_stypes import task_to_stypes
 from typing import Dict, List
 from langchain_core.messages import BaseMessage, HumanMessage
@@ -6,26 +6,22 @@ from .model.lgbm_model import LGBMModel
 from .model_pipeline import ModelPipeline
 from .workflow.setup import setup_analysis_workflow
 
+SUBSAMPLE = 20_000
+DATASET = 'rel-hm'
+TASK = 'user-churn'
+PIPELINE_PATH = 'saved_pipelines/rel_hm_user_churn_lgbm_20k.joblib'
 
-def _generate_pipeline():
-    dataset = 'rel-hm'
-    task = 'user-churn'
-    subsample = 20_000
-    task_params, train_df, val_df, test_df = prepare_data(
-        dataset=dataset,
-        task=task,
-        subsample=subsample,
-        init_db=False,
-        generate_feats=False
-    )
 
-    full_task_name = f'{dataset}-{task}'
+def _generate_pipeline(_task_params, _train_df):
+    full_task_name = f'{DATASET}-{TASK}'
     col_to_stype = task_to_stypes[full_task_name]
+    model = LGBMModel(_task_params, col_to_stype)
 
-    model = LGBMModel(task_params, col_to_stype)
-    pipeline = ModelPipeline(model, col_to_stype, train_df)
-    pipeline.fit(train_df)
-    pipeline.save('saved_pipelines/rel_hm_user_churn_lgbm_20k.joblib')
+    _pipeline = ModelPipeline(model, col_to_stype)
+    _pipeline.fit(_train_df)
+    _pipeline.save(PIPELINE_PATH)
+
+    return _pipeline
 
 
 def run_analysis(initial_data: str) -> Dict[str, List[BaseMessage]]:
@@ -36,22 +32,14 @@ def run_analysis(initial_data: str) -> Dict[str, List[BaseMessage]]:
     return workflow.run(messages)
 
 
-""" 
-params:
-    predictions: <time, id, prediction, ground_truth...>
-    model: pkl
-    baseline metrics: accuracy, precision, f1, recall, log_loss...
-    database: schema, attributes, features...
-"""
 if __name__ == "__main__":
-    _dataset = 'rel-hm'
-    _task = 'user-churn'
-    _subsample = 20_000
-    _task_params, _train_df, _val_df, _test_df = prepare_data(_dataset, _task, _subsample)
+    task_params, train_df, val_df, test_df = fetch_data(DATASET, TASK, SUBSAMPLE)
 
-    loaded_pipeline = ModelPipeline.load('saved_pipelines/rel_hm_user_churn_lgbm_20k.joblib')
-    baseline = loaded_pipeline.get_metrics(_val_df)
-    print(baseline)
+    pipeline = ModelPipeline.load(PIPELINE_PATH)
+    pipeline.enrich_with_metrics(val_df)
+
+    resultant_test_df = pipeline.predict_and_append_to_df(test_df)
+    pipeline.enrich_with_ref_data(train_df=train_df, val_df=val_df, test_df=resultant_test_df)
 
     data = "Performance metrics show a sudden drop in model accuracy last week"
     response = run_analysis(data)
