@@ -27,9 +27,9 @@ def db_setup(dataset_name: str, db_filename: str):
         conn.sql(f'create table {table_name} as select * from {table_name}')
     for task_name in tasks:
         task = get_task(dataset_name, task_name, download=True)
-        train_table = task.get_table("train").df  # noqa
-        val_table = task.get_table("val").df  # noqa
-        test_table = task.get_table("test").df  # noqa
+        train_table = task.get_table("train", mask_input_cols=False).df  # noqa
+        val_table = task.get_table("val", mask_input_cols=False).df  # noqa
+        test_table = task.get_table("test", mask_input_cols=False).df  # noqa
         task_name = task_name.replace('-', '_')
         conn.sql(f'create table {task_name}_train as select * from train_table')
         conn.sql(f'create table {task_name}_val as select * from val_table')
