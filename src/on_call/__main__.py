@@ -6,7 +6,7 @@ if not __package__:
     package_source_path = os.path.dirname(os.path.dirname(__file__))
     sys.path.insert(0, package_source_path)
 
-from on_call.data.hm.loader import fetch_data
+from on_call.data.hm.loader import fetch_data, TimeConfig
 from on_call.data.hm.inferred_stypes import task_to_stypes
 from on_call.model.lgbm_model import LGBMModel
 from on_call.model_pipeline import ModelPipeline
