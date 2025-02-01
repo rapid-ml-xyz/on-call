@@ -46,7 +46,9 @@ def run_analysis(initial_data: str) -> LangGraphMessageState:
 
 
 if __name__ == "__main__":
-    task_params, train_df, val_df, test_df = fetch_data(DATASET, TASK, SUBSAMPLE)
+    custom_time = TimeConfig(year=2020, train_months=range(1, 7), val_month=7, test_month=8)
+    task_params, train_df, val_df, test_df = fetch_data(
+        dataset=DATASET, task=TASK, subsample=SUBSAMPLE, time_config=custom_time)
 
     pipeline = ModelPipeline.load(PIPELINE_PATH)
     pipeline.enrich_with_metrics(val_df)
