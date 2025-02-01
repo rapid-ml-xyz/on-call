@@ -2,13 +2,14 @@ import duckdb
 import pandas as pd
 import os
 
-from .utils import db_setup, render_jinja_sql
 from relbench.tasks import get_task
 from torch_frame import TaskType
 from torch_frame.typing import Metric
 
-CSV_PATH = 'data/hm/csv'
-DATASET_TO_DB = {'rel-hm': 'data/hm/hm.db'}
+from on_call.data.hm.utils import db_setup, render_jinja_sql
+
+DATA_FOLDER = 'data/hm'
+DATASET_TO_DB = {'rel-hm': f'{DATA_FOLDER}/hm.db'}
 
 TASK_PARAMS = {
     'rel-hm-item-sales': {
@@ -59,14 +60,14 @@ def fetch_data(dataset: str, task: str, subsample: int = 0,
 
     csv_files = ['train.csv', 'val.csv', 'test.csv']
     all_files_exist = all(
-        os.path.exists(os.path.join(CSV_PATH, f))
+        os.path.exists(os.path.join(DATA_FOLDER, f))
         for f in csv_files
     )
 
     if all_files_exist:
-        train_df = pd.read_csv(os.path.join(CSV_PATH, 'train.csv'), index_col=0)
-        val_df = pd.read_csv(os.path.join(CSV_PATH, 'val.csv'), index_col=0)
-        test_df = pd.read_csv(os.path.join(CSV_PATH, 'test.csv'), index_col=0)
+        train_df = pd.read_csv(os.path.join(DATA_FOLDER, 'train.csv'), index_col=0)
+        val_df = pd.read_csv(os.path.join(DATA_FOLDER, 'val.csv'), index_col=0)
+        test_df = pd.read_csv(os.path.join(DATA_FOLDER, 'test.csv'), index_col=0)
 
         full_task_name = f'{dataset}-{task}'
         return TASK_PARAMS[full_task_name], train_df, val_df, test_df
@@ -84,7 +85,7 @@ def fetch_data(dataset: str, task: str, subsample: int = 0,
     conn = duckdb.connect(DATASET_TO_DB[dataset])
 
     if generate_feats:
-        with open('data/hm/feats.sql') as f:
+        with open(f'{DATA_FOLDER}/feats.sql') as f:
             template = f.read()
         for s in ['train', 'val', 'test']:
             query = render_jinja_sql(template, dict(set=s, subsample=subsample))
@@ -101,8 +102,8 @@ def fetch_data(dataset: str, task: str, subsample: int = 0,
     if subsample > 0 and not generate_feats:
         train_df = train_df.head(subsample)
 
-    train_df.to_csv(f'{CSV_PATH}/train.csv')
-    val_df.to_csv(f'{CSV_PATH}/val.csv')
-    test_df.to_csv(f'{CSV_PATH}/test.csv')
+    train_df.to_csv(f'{DATA_FOLDER}/train.csv')
+    val_df.to_csv(f'{DATA_FOLDER}/val.csv')
+    test_df.to_csv(f'{DATA_FOLDER}/test.csv')
 
     return task_params, train_df, val_df, test_df
