@@ -1,4 +1,5 @@
 import duckdb
+import os
 import pandas as pd
 from dataclasses import dataclass
 from torch_frame import TaskType
@@ -71,11 +72,25 @@ def split_by_timestamp(df, time_config=None):
 def fetch_data(dataset: str, task: str, subsample: int = 0, time_config: TimeConfig = None,
                init_db: bool = False, generate_feats: bool = False) -> tuple:
 
-    if init_db:
-        db_setup(dataset, DATASET_TO_DB[dataset])
-
     full_task_name = f'{dataset}-{task}'
     task_params = TASK_PARAMS[full_task_name]
+
+    csv_files = ['train.csv', 'val.csv', 'test.csv']
+    all_files_exist = all(
+        os.path.exists(os.path.join(DATA_FOLDER, f))
+        for f in csv_files
+    )
+
+    if all_files_exist:
+        train_df = pd.read_csv(os.path.join(DATA_FOLDER, 'train.csv'), index_col=0)
+        val_df = pd.read_csv(os.path.join(DATA_FOLDER, 'val.csv'), index_col=0)
+        test_df = pd.read_csv(os.path.join(DATA_FOLDER, 'test.csv'), index_col=0)
+
+        full_task_name = f'{dataset}-{task}'
+        return TASK_PARAMS[full_task_name], train_df, val_df, test_df
+
+    if init_db:
+        db_setup(dataset, DATASET_TO_DB[dataset])
 
     conn = duckdb.connect(DATASET_TO_DB[dataset])
 
