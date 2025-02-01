@@ -33,16 +33,12 @@ def _generate_pipeline(_task_params, _train_df):
     return _pipeline
 
 
-def run_analysis(initial_data: str) -> LangGraphMessageState:
-    """Run the performance analysis workflow"""
-    messages = {
-        "messages": initial_data,
-        "foo": "bar",
-        "baz": "qux"
-    }
+def run_analysis(_pipeline: ModelPipeline) -> LangGraphMessageState:
+    state = {"pipeline": _pipeline}
     workflow = setup_analysis_workflow()
     workflow.visualize_graph()
-    return workflow.run(messages)
+    result = workflow.run(state)
+    return result
 
 
 if __name__ == "__main__":
@@ -56,7 +52,6 @@ if __name__ == "__main__":
     resultant_test_df = pipeline.predict_and_append_to_df(test_df)
     pipeline.enrich_with_ref_data(train_df=train_df, val_df=val_df, test_df=resultant_test_df)
 
-    data = "Performance metrics show a sudden drop in model accuracy last week"
-    response = run_analysis(data)
+    response = run_analysis(pipeline)
     print(f"Analysis Results: {response}")
 
