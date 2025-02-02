@@ -1,5 +1,5 @@
 from typing import Callable, Dict
-from ..modules import do_nothing, BaselineAnalyzer, ImpactWindowAnalyzer
+from ..modules import do_nothing, BaselineAnalyzer, ImpactWindowAnalyzer, TrendAnalyzer
 from ..orchestrator.engines import LangGraphOrchestrator, LangGraphToolWrapper, LangGraphMessageState
 from ..orchestrator import EdgeConfig, NodeConfig, NodeType, RouteType
 from .enums import Step
@@ -10,6 +10,7 @@ def setup_analysis_workflow() -> LangGraphOrchestrator:
     orchestrator = LangGraphOrchestrator()
 
     node_functions: Dict[str, Callable[[LangGraphMessageState], LangGraphMessageState]] = {
+        Step.TREND_ANALYZER.name: lambda state: TrendAnalyzer(state).run(),
         Step.IMPACT_WINDOW.name: lambda state: ImpactWindowAnalyzer(state).run(),
         Step.BASELINE.name: lambda state: BaselineAnalyzer(state).run(),
         Step.PATTERN.name: do_nothing,
@@ -84,6 +85,7 @@ def setup_analysis_workflow() -> LangGraphOrchestrator:
     ]
 
     sequential_flows = {
+        Step.TREND_ANALYZER.name: Step.IMPACT_WINDOW.name,
         Step.IMPACT_WINDOW.name: Step.BASELINE.name,
         Step.BASELINE.name: Step.PATTERN.name,
         Step.TIME.name: Step.COHORT.name,
@@ -108,5 +110,5 @@ def setup_analysis_workflow() -> LangGraphOrchestrator:
             routes={dest: dest}
         ))
 
-    orchestrator.set_entry_point(Step.IMPACT_WINDOW.name)
+    orchestrator.set_entry_point(Step.TREND_ANALYZER.name)
     return orchestrator
