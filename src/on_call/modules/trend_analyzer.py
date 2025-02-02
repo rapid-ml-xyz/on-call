@@ -17,7 +17,29 @@ class TrendAnalyzer(BaseAnalyzer):
     def __init__(self, workflow_state: WorkflowState):
         super().__init__(workflow_state)
         self.patterns = {}
-        self.window_size = 15
+        self.window_size = None
+
+    def _determine_window_size(self, df: pd.DataFrame, timestamp_col: str) -> int:
+        if len(df) < 2:
+            return 1
+
+        timestamps = pd.to_datetime(df[timestamp_col])
+        time_diffs = timestamps.diff().dropna()
+        median_diff = time_diffs.median()
+        print("median_diff")
+        print(median_diff)
+
+        if median_diff <= pd.Timedelta(minutes=5):
+            window_size = 60
+        elif median_diff <= pd.Timedelta(hours=1):
+            window_size = 24
+        elif median_diff <= pd.Timedelta(days=1):
+            window_size = 15
+        elif median_diff <= pd.Timedelta(weeks=1):
+            window_size = 8
+        else:
+            window_size = 6
+        return min(window_size, len(df) // 3)
 
     def run(self) -> WorkflowState:
         pipeline: ModelPipeline = self.state['pipeline']
@@ -27,10 +49,13 @@ class TrendAnalyzer(BaseAnalyzer):
         error_col = pipeline.metadata.error_column
         timestamp_col = pipeline.metadata.timestamp_column
 
+        # Data preparation
         df[error_col] = pd.to_numeric(df[error_col], errors='coerce')
         df[timestamp_col] = pd.to_datetime(df[timestamp_col])
         df = df.sort_values(timestamp_col)
 
+        # Dynamically set the window size
+        self.window_size = self._determine_window_size(df, timestamp_col)
         self.patterns['trend'] = self._analyze_trend(df, error_col, timestamp_col, task_type)
         self.patterns['seasonality'] = self._analyze_seasonality(df, error_col, timestamp_col, task_type)
         self.patterns['spikes'] = self._analyze_spikes(df, error_col, timestamp_col, task_type)
@@ -50,11 +75,9 @@ class TrendAnalyzer(BaseAnalyzer):
         if not valid_indices:
             return []
 
-        # Extract timestamps and convert to dates
         dates = pd.to_datetime(df.loc[valid_indices, timestamp_col]).dt.normalize().unique()
         dates = sorted(dates)
 
-        # Create windows for consecutive dates
         windows = []
         window_start = None
         prev_date = None
