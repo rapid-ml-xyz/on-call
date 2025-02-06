@@ -1,5 +1,5 @@
 from typing import Callable, Dict
-from ..modules import do_nothing, BaselineAnalyzer, ImpactWindowAnalyzer, ImportsModule
+from ..modules import do_nothing, BaselineAnalyzer, ImportsModule, TimeSeriesReports
 from ..orchestrator.engines import LangGraphOrchestrator, LangGraphToolWrapper, LangGraphMessageState
 from ..orchestrator import EdgeConfig, NodeConfig, NodeType, RouteType
 from .enums import Step
@@ -10,7 +10,7 @@ def setup_analysis_workflow() -> LangGraphOrchestrator:
 
     node_functions: Dict[str, Callable[[LangGraphMessageState], LangGraphMessageState]] = {
         Step.IMPORT.name: lambda state: ImportsModule(state).run(),
-        Step.IMPACT_WINDOW.name: lambda state: ImpactWindowAnalyzer(state).run(),
+        Step.IMPACT_WINDOW.name: lambda state: TimeSeriesReports(state).run(),
         Step.BASELINE.name: lambda state: BaselineAnalyzer(state).run(),
         Step.PATTERN.name: do_nothing
     }
