@@ -1,0 +1,32 @@
+import pandas as pd
+import numpy as np
+import requests
+import zipfile
+import io
+import json
+import os
+from dotenv import load_dotenv
+import openai
+
+from dataclasses import dataclass
+from datetime import datetime, time
+from typing import Dict, List, NamedTuple, Tuple, Optional
+
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from sklearn import datasets, ensemble
+from evidently import ColumnMapping
+from evidently.report import Report
+from evidently.metric_preset import (
+    TargetDriftPreset,
+    RegressionPreset,
+    DataDriftPreset,
+    DataQualityPreset
+)
+
+{% if custom_imports %}
+{{ custom_imports }}
+{% endif %}
+
+load_dotenv()
+print("{{ startup_message|default('All modules imported!') }}")

@@ -1,8 +1,8 @@
-from .base_analyzer import BaseAnalyzer
+from .base_module import BaseModule
 from ..orchestrator import WorkflowState
 
 
-class ImpactWindowAnalyzer(BaseAnalyzer):
+class ImpactWindowAnalyzer(BaseModule):
     def run(self) -> WorkflowState:
         self.state['impact_results'] = {
             "impact_score": 0.85,

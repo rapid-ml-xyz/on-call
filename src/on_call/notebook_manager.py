@@ -4,7 +4,7 @@ from nbformat.v4 import new_notebook, new_code_cell, new_markdown_cell
 from nbconvert import HTMLExporter
 
 from jupyter_client.manager import KernelManager
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 
 
 class NotebookManager:
@@ -141,68 +141,88 @@ class NotebookManager:
 
         self._execute_cell_object(cell)
 
+    def get_cell_outputs(self, cell_id: str):
+        idx = self._find_cell_index_by_id(cell_id)
+        if idx == -1:
+            print(f"Cell with id={cell_id} not found.")
+            return None
+
+        cell = self.notebook.cells[idx]
+        if "outputs" not in cell:
+            return None
+
+        for output in cell["outputs"]:
+            self._display_output(output)
+
+        return cell["outputs"]
+
+    def _display_output(self, output):
+        output_handlers = {
+            'stream': lambda o: print(f"{o['name']}: {o['text']}", end=''),
+            'execute_result': lambda o: print(o['data'].get('text/plain', '')),
+            'error': lambda o: print('\n'.join(o['traceback'])),
+            'display_data': lambda o: print(o['data'].get('text/plain', ''))
+        }
+
+        handler = output_handlers.get(output['output_type'])
+        if handler:
+            handler(output)
+
+    def _create_output(self, msg_type: str, content: dict, execution_count: int = None) -> dict:
+        if msg_type in ("execute_result", "display_data"):
+            return nbformat.v4.new_output(
+                output_type=msg_type,
+                data=content["data"],
+                metadata=content["metadata"],
+                execution_count=execution_count
+            )
+        elif msg_type == "stream":
+            return nbformat.v4.new_output(
+                output_type="stream",
+                name=content["name"],
+                text=content["text"]
+            )
+        elif msg_type == "error":
+            return nbformat.v4.new_output(
+                output_type="error",
+                ename=content["ename"],
+                evalue=content["evalue"],
+                traceback=content["traceback"]
+            )
+        return {}
+
     def _execute_cell_object(self, cell: Dict[str, Any]):
-        """
-        Sends a single code cell to the kernel, captures outputs, and stores them in the notebook.
-        """
-        # Clear previous outputs
         cell["outputs"] = []
         cell["execution_count"] = self.execution_count
 
-        # Create and send execute_request
-        code = cell.source
+        code = cell["source"]
         msg_id = self.kc.execute(code)
 
-        # Collect the output messages
+        print(f"\nIn [{self.execution_count}]:")
+        print(code)
+        print(f"\nOut[{self.execution_count}]:")
+
         while True:
             msg = self.kc.get_iopub_msg()
             if msg["parent_header"].get("msg_id") != msg_id:
-                # Not our message; skip.
                 continue
-
             msg_type = msg["header"]["msg_type"]
-
-            if msg_type == "status":
-                # "status: idle" indicates the kernel finished processing
-                if msg["content"]["execution_state"] == "idle":
-                    break
-
-            self._render_html()
-
-            if msg_type in ("execute_result", "display_data"):
-                # Typical outputs that go into 'outputs'
-                content = msg["content"]
-                output = nbformat.v4.new_output(
-                    output_type=msg_type,
-                    data=content["data"],
-                    metadata=content["metadata"],
-                    execution_count=self.execution_count,
+            if msg_type == "status" and msg["content"]["execution_state"] == "idle":
+                break
+            if msg_type in ("execute_result", "display_data", "stream", "error"):
+                output = self._create_output(
+                    msg_type,
+                    msg["content"],
+                    self.execution_count
                 )
-                cell["outputs"].append(output)
+                if output:
+                    cell["outputs"].append(output)
+                    self._display_output(output)
 
-            elif msg_type == "stream":
-                # stdout/err
-                content = msg["content"]
-                output = nbformat.v4.new_output(
-                    output_type="stream",
-                    name=content["name"],  # e.g. 'stdout' or 'stderr'
-                    text=content["text"],
-                )
-                cell["outputs"].append(output)
-
-            elif msg_type == "error":
-                # Traceback error
-                content = msg["content"]
-                output = nbformat.v4.new_output(
-                    output_type="error",
-                    ename=content["ename"],
-                    evalue=content["evalue"],
-                    traceback=content["traceback"],
-                )
-                cell["outputs"].append(output)
-
-        # Increment execution count globally
+        self._render_html()
+        self.save_notebook()
         self.execution_count += 1
+        print("\n")
 
     def save_notebook(self):
         """
