@@ -1,4 +1,4 @@
-from on_call.modules import FlagCriticalWindows, ImportsModule, TimeSeriesReports, WindowVisualizations
+from on_call.modules import FlagCriticalWindows, ImportsModule, TimeSeriesReports, TimeSeriesSummary, WindowVisualizations
 from on_call.orchestrator.engines import LangGraphOrchestrator, LangGraphToolWrapper, LangGraphMessageState
 from on_call.orchestrator import EdgeConfig, NodeConfig, NodeType, RouteType
 from on_call.workflow.enums import Step
@@ -13,7 +13,8 @@ def setup_analysis_workflow() -> LangGraphOrchestrator:
             (Step.IMPORTS, ImportsModule),
             (Step.TIME_SERIES_REPORTS, TimeSeriesReports),
             (Step.WINDOW_VISUALIZATIONS, WindowVisualizations),
-            (Step.FLAG_CRITICAL_WINDOWS, FlagCriticalWindows)
+            (Step.FLAG_CRITICAL_WINDOWS, FlagCriticalWindows),
+            (Step.TIME_SERIES_SUMMARY, TimeSeriesSummary)
         ]
     ]
 
