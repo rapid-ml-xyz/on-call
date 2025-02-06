@@ -1,0 +1,46 @@
+"""
+Fetch insights about feature & data drift in natural language
+"""
+
+_context = """
+How does the feature distribution & quality changed compared to baseline?
+Look at the data drift report & data quality report.
+Focus on the columns that have changed, and try to answer "how" & "why."
+"""
+
+{% raw %}
+---CELL---
+{% endraw %}
+
+def generate_window_prompt(window) -> str:
+    """Generate analysis prompt for a single window."""
+    timeframe = f"Time Range: {window.start_time} to {window.end_time}"
+    return f"""
+    Please provide a clear, concise natural language summary of the following JSON data:
+    {window.drift_report.json()}
+    {window.quality_report.json()}
+
+    Here's the timeframe as well: {timeframe}
+    Try using layman's English"""
+
+{% raw %}
+---CELL---
+{% endraw %}
+
+def print_window_analysis(window, context: str) -> None:
+    """Print analysis for a single window."""
+    print(f"\nWindow {window.window_id}")
+    summary = get_openai_result(
+        context,
+        generate_window_prompt(window),
+        openai_api_key
+    )
+    print(summary)
+    print("-" * 80)
+
+{% raw %}
+---CELL---
+{% endraw %}
+
+for window in window_analyses:
+    print_window_analysis(window, _context)
