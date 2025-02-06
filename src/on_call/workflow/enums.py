@@ -4,6 +4,7 @@ from enum import Enum
 class Step(Enum):
     IMPORT = "import"
     IMPACT_WINDOW = "define_impact_window"
+    WINDOW_VISUALIZATION = "window_visualization"
     BASELINE = "compare_baseline"
     PATTERN = "identify_pattern"
 
