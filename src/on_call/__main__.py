@@ -7,6 +7,7 @@ if not __package__:
     package_source_path = os.path.dirname(os.path.dirname(__file__))
     sys.path.insert(0, package_source_path)
 
+from on_call.notebook_manager import NotebookManager
 from on_call.data.hm.inferred_stypes import task_to_stypes
 from on_call.model.lgbm_model import LGBMModel
 from on_call.model.random_forest_regressor_model import RandomForestRegressor
@@ -50,8 +51,11 @@ def build_model(raw_data):
     return model
 
 
-def run_analysis(model) -> LangGraphMessageState:
-    state = {"model": model}
+def run_analysis(model, notebook_manager) -> LangGraphMessageState:
+    state = {
+        "model": model,
+        "notebook_manager": notebook_manager
+    }
     workflow = setup_analysis_workflow()
     workflow.visualize_graph()
     result = workflow.run(state)
@@ -61,6 +65,9 @@ def run_analysis(model) -> LangGraphMessageState:
 if __name__ == "__main__":
     df = pd.read_csv("data/bike_sharing_data.csv", index_col=0, parse_dates=True)
     _model = build_model(df)
-    response = run_analysis(_model)
-    print(f"Analysis Results: {response}")
-
+    _notebook_manager = NotebookManager(notebook_path="oncall.ipynb")
+    try:
+        response = run_analysis(_model, _notebook_manager)
+        print(f"Analysis Results: {response}")
+    finally:
+        _notebook_manager.shutdown()

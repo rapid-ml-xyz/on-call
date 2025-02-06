@@ -227,4 +227,8 @@ class NotebookManager:
         """
         Destructor: ensure kernel is closed and notebook is saved.
         """
-        self.shutdown()
+        try:
+            if hasattr(self, 'active_kernel') and self.active_kernel:
+                self._stop_kernel()
+        except:
+            pass

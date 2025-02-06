@@ -5,21 +5,6 @@ class Step(Enum):
     IMPACT_WINDOW = "define_impact_window"
     BASELINE = "compare_baseline"
     PATTERN = "identify_pattern"
-    TIME = "time_analysis"
-    DRIFT = "drift_analysis"
-    COHORT = "cohort_analysis"
-    FEATURE_DIST = "feature_distribution"
-    GLOBAL_PERF = "global_performance"
-    DISTRIBUTION_SHIFT = "distribution_shift"
-    FEATURE_IMPORTANCE = "feature_importance"
-    ERROR_ANALYSIS = "error_analysis"
-    GLOBAL_METRICS = "global_metrics"
-    METRIC_FOCUSED = "metric_focused"
-    MODEL_BEHAVIOR = "model_behavior"
-    LOCAL_EXPLANATION = "local_explanation"
-    ROOT_CAUSE = "root_cause"
-    RECOMMENDATIONS = "recommendations"
-    ITERATE_COHORT = "iterate_cohort"
 
 
 class Pattern(Enum):
