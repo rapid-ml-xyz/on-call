@@ -5,6 +5,7 @@ import zipfile
 import io
 import json
 import os
+import sys
 from dotenv import load_dotenv
 import openai
 
@@ -23,6 +24,10 @@ from evidently.metric_preset import (
     DataDriftPreset,
     DataQualityPreset
 )
+
+if not __package__:
+    package_source_path = "src" 
+    sys.path.insert(0, package_source_path)
 
 {% if custom_imports %}
 {{ custom_imports }}
