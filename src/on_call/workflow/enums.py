@@ -2,11 +2,10 @@ from enum import Enum
 
 
 class Step(Enum):
-    IMPORT = "import"
-    IMPACT_WINDOW = "define_impact_window"
-    WINDOW_VISUALIZATION = "window_visualization"
-    BASELINE = "compare_baseline"
-    PATTERN = "identify_pattern"
+    IMPORTS = "import"
+    TIME_SERIES_REPORTS = "time_series_reports"
+    WINDOW_VISUALIZATIONS = "window_visualization"
+    FLAG_CRITICAL_WINDOWS = "flag_critical_windows"
 
 
 class Pattern(Enum):

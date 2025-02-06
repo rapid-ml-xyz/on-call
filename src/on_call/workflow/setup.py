@@ -1,43 +1,39 @@
-from typing import Callable, Dict
-from ..modules import do_nothing, BaselineAnalyzer, ImportsModule, TimeSeriesReports, WindowVisualizations
-from ..orchestrator.engines import LangGraphOrchestrator, LangGraphToolWrapper, LangGraphMessageState
-from ..orchestrator import EdgeConfig, NodeConfig, NodeType, RouteType
-from .enums import Step
+from on_call.modules import FlagCriticalWindows, ImportsModule, TimeSeriesReports, WindowVisualizations
+from on_call.orchestrator.engines import LangGraphOrchestrator, LangGraphToolWrapper, LangGraphMessageState
+from on_call.orchestrator import EdgeConfig, NodeConfig, NodeType, RouteType
+from on_call.workflow.enums import Step
 
 
 def setup_analysis_workflow() -> LangGraphOrchestrator:
     orchestrator = LangGraphOrchestrator()
 
-    node_functions: Dict[str, Callable[[LangGraphMessageState], LangGraphMessageState]] = {
-        Step.IMPORT.name: lambda state: ImportsModule(state).run(),
-        Step.IMPACT_WINDOW.name: lambda state: TimeSeriesReports(state).run(),
-        Step.WINDOW_VISUALIZATION.name: lambda state: WindowVisualizations(state).run(),
-        Step.BASELINE.name: lambda state: BaselineAnalyzer(state).run(),
-        Step.PATTERN.name: do_nothing
-    }
-
-    nodes = [
-        NodeConfig[LangGraphMessageState, LangGraphToolWrapper](
-            name=step.name,
-            node_type=NodeType.FUNCTION,
-            function=node_functions[step.name]
-        ) for step in Step
+    steps = [
+        (step.name, lambda state, module=module: module(state).run())
+        for step, module in [
+            (Step.IMPORTS, ImportsModule),
+            (Step.TIME_SERIES_REPORTS, TimeSeriesReports),
+            (Step.WINDOW_VISUALIZATIONS, WindowVisualizations),
+            (Step.FLAG_CRITICAL_WINDOWS, FlagCriticalWindows)
+        ]
     ]
-    orchestrator.configure_nodes(nodes)
 
-    sequential_flows = {
-        Step.IMPORT.name: Step.IMPACT_WINDOW.name,
-        Step.IMPACT_WINDOW.name: Step.WINDOW_VISUALIZATION.name,
-        Step.WINDOW_VISUALIZATION.name: Step.BASELINE.name,
-        Step.BASELINE.name: Step.PATTERN.name
-    }
+    orchestrator.configure_nodes([
+        NodeConfig[LangGraphMessageState, LangGraphToolWrapper](
+            name=name,
+            node_type=NodeType.FUNCTION,
+            function=func
+        ) for name, func in steps
+    ])
 
-    for source, dest in sequential_flows.items():
-        orchestrator.add_edge(source, EdgeConfig(
-            route_type=RouteType.DYNAMIC,
-            condition=lambda state, next_node=dest: next_node,
-            routes={dest: dest}
-        ))
+    for (current_name, _), (next_step_name, _) in zip(steps[:-1], steps[1:]):
+        orchestrator.add_edge(
+            current_name,
+            EdgeConfig(
+                route_type=RouteType.DYNAMIC,
+                condition=lambda state, target=next_step_name: target,
+                routes={next_step_name: next_step_name}
+            )
+        )
 
-    orchestrator.set_entry_point(Step.IMPORT.name)
+    orchestrator.set_entry_point(steps[0][0])
     return orchestrator
