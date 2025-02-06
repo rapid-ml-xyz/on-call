@@ -29,6 +29,12 @@ if not __package__:
     package_source_path = "src" 
     sys.path.insert(0, package_source_path)
 
+from on_call.modules.time_series_reports import (
+   calculate_dynamic_window_info,
+   generate_time_windows_datetime,
+   run_performance_reports
+)
+
 {% if custom_imports %}
 {{ custom_imports }}
 {% endif %}
