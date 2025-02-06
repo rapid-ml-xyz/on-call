@@ -6,6 +6,7 @@ class Step(Enum):
     TIME_SERIES_REPORTS = "time_series_reports"
     WINDOW_VISUALIZATIONS = "window_visualization"
     FLAG_CRITICAL_WINDOWS = "flag_critical_windows"
+    TIME_SERIES_SUMMARY = "time_series_summary"
 
 
 class Pattern(Enum):
