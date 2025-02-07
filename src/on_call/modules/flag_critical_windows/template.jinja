@@ -1,17 +1,18 @@
-"""
-Functions for cleaning and analyzing report data.
-"""
+"""Report analysis cell.
+Processes and analyzes monitoring data from performance and drift reports."""
 
 from on_call.modules.flag_critical_windows import analyze_monitoring_data_json, WindowData
 
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Process report data into WindowData objects"""
 
 window_data = [WindowData(reg.json(), drift.json()) for reg, drift in reports]
 
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Analyze monitoring data and generate insights"""
 
 analysis = analyze_monitoring_data_json(window_data, current)

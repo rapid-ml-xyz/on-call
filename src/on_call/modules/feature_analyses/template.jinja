@@ -1,4 +1,6 @@
-# Define features from template variables
+"""Feature analysis cell.
+Processes critical windows and generates feature-level analysis reports."""
+
 _numerical_features = {{ numerical_features }}
 _categorical_features = {{ categorical_features }}
 critical_windows = analysis['summary']['critical_windows']['details']
@@ -6,12 +8,14 @@ critical_windows = analysis['summary']['critical_windows']['details']
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Import feature analysis utilities"""
 
 from on_call.modules.feature_analyses import run_critical_window_feature_reports
 
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Run feature analysis reports for critical windows"""
 
 window_analyses = run_critical_window_feature_reports(
     current=current,

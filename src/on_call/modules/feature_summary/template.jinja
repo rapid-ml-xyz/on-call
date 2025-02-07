@@ -1,12 +1,12 @@
-"""
-Fetch insights about feature & data drift in natural language
-"""
+"""Natural language insights cell for feature and data drift.
+Generates detailed natural language summaries for feature-level analyses across critical windows."""
 
 from on_call.modules.feature_summary import get_features_nlp_setup
 
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Generate feature-level natural language insights"""
 
 for window in window_analyses:
     print(f"\nAnalysis for window {window.window_id}\n")

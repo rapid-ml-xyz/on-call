@@ -1,18 +1,12 @@
-"""
-Performance Visualization Functions
-================================
-Create interactive visualizations for model performance analysis using Plotly.
-"""
-
-{% raw %}
----CELL---
-{% endraw %}
+"""Feature visualization cell.
+Creates interactive visualizations for feature-level analysis and summary plots."""
 
 from on_call.modules.feature_visualizations import create_feature_analysis_plot, create_feature_summary_plot
 
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Create and display feature analysis visualizations"""
 
 feature_analysis_fig = create_feature_analysis_plot(window_analyses)
 if feature_analysis_fig:
