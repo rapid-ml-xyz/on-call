@@ -140,7 +140,7 @@ def create_drift_analysis_plot(reports):
             y=features,
             text=text_data,
             hoverongaps=False,
-            colorscale='RdYlBu_r',
+            colorscale='RdYlBu',
             colorbar=dict(title='Drift Score')
         )
     )
