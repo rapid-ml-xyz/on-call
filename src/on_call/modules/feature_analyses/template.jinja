@@ -1,79 +1,23 @@
 # Define features from template variables
-numerical_features = {{ numerical_features }}
-categorical_features = {{ categorical_features }}
-
-{% raw %}
----CELL---
-{% endraw %}
-
-"""
-Report generation for critical windows - feature drift & quality analysis
-"""
-
-@dataclass
-class WindowAnalysis:
-    window_id: int
-    start_time: datetime
-    end_time: datetime
-    drift_report: Report
-    quality_report: Report
-
-{% raw %}
----CELL---
-{% endraw %}
-
-def run_critical_window_feature_reports(current: pd.DataFrame,
-                                     reference: pd.DataFrame,
-                                     column_mapping: dict,
-                                     critical_windows: list) -> list[WindowAnalysis]:
-    window_analyses = []
-
-    for window in critical_windows:
-        start_time = pd.Timestamp(window['time_range']['start'])
-        end_time = pd.Timestamp(window['time_range']['end'])
-
-        feature_drift = Report(
-            metrics=[DataDriftPreset(columns=numerical_features+categorical_features)],
-            options={"render": {"raw_data": True}}
-        )
-        feature_drift.run(
-            current_data=current.loc[start_time:end_time],
-            reference_data=reference,
-            column_mapping=column_mapping
-        )
-
-        feature_quality = Report(
-            metrics=[DataQualityPreset(columns=numerical_features+categorical_features)],
-            options={"render": {"raw_data": True}}
-        )
-        feature_quality.run(
-            current_data=current.loc[start_time:end_time],
-            reference_data=reference,
-            column_mapping=column_mapping
-        )
-
-        window_analyses.append(WindowAnalysis(
-            window_id=window['window_id'],
-            start_time=start_time,
-            end_time=end_time,
-            drift_report=feature_drift,
-            quality_report=feature_quality
-        ))
-
-        print(f"\nCompleted feature analysis for critical window {window['window_id']}: {start_time} to {end_time}\n")
-        print("-" * 80 + "\n")
-
-    return window_analyses
-
-{% raw %}
----CELL---
-{% endraw %}
-
+_numerical_features = {{ numerical_features }}
+_categorical_features = {{ categorical_features }}
 critical_windows = analysis['summary']['critical_windows']['details']
+
+{% raw %}
+---CELL---
+{% endraw %}
+
+from on_call.modules.feature_analyses import run_critical_window_feature_reports
+
+{% raw %}
+---CELL---
+{% endraw %}
 
 window_analyses = run_critical_window_feature_reports(
     current=current,
     reference=reference,
+    numerical_features=_numerical_features,
+    categorical_features=_categorical_features,
     column_mapping=column_mapping,
     critical_windows=critical_windows
 )
