@@ -10,6 +10,7 @@ class Step(Enum):
     FEATURE_ANALYSES = "feature_analyses"
     FEATURE_VISUALIZATIONS = "feature_visualization"
     FEATURE_SUMMARY = "feature_summary"
+    CONCLUSION = "conclusion"
 
 
 class Pattern(Enum):

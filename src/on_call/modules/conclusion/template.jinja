@@ -1,0 +1,18 @@
+"""Natural language insights cell for consolidated analysis.
+Generates a comprehensive summary combining model performance and feature analysis."""
+
+from on_call.modules.conclusion import get_consolidated_summary
+
+{% raw %}
+---CELL---
+{% endraw %}
+"""Generate consolidated summary of model performance and feature analysis"""
+
+_context, _prompt = get_consolidated_summary(time_series_summary, feature_summaries)
+consolidated_summary = get_summary(_context, _prompt)
+
+{% raw %}
+---CELL---
+{% endraw %}
+from IPython.display import Markdown
+display(Markdown(f"{consolidated_summary}"))

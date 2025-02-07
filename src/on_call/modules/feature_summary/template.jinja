@@ -9,8 +9,11 @@ from IPython.display import Markdown
 {% endraw %}
 """Generate feature-level natural language insights"""
 
+feature_summaries = []
+
 for window in window_analyses:
     _context, _prompt = get_features_nlp_setup(window)
     feature_summary = get_summary(_context, _prompt)
+    feature_summaries.append(feature_summary)
     display(Markdown(f"### Analysis for window {window.window_id}\n"))
     display(Markdown(f"{feature_summary}"))
