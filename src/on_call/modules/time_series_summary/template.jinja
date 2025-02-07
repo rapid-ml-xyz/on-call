@@ -9,4 +9,11 @@ from on_call.modules.time_series_summary import get_summary, get_time_series_nlp
 """Generate natural language summaries of model and drift analysis"""
 
 _context, _prompt = get_time_series_nlp_setup(analysis)
-get_summary(_context, _prompt)
+time_series_summary = get_summary(_context, _prompt)
+
+{% raw %}
+---CELL---
+{% endraw %}
+
+from IPython.display import Markdown
+display(Markdown(f"{time_series_summary}"))

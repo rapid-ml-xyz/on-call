@@ -2,6 +2,7 @@
 Generates detailed natural language summaries for feature-level analyses across critical windows."""
 
 from on_call.modules.feature_summary import get_features_nlp_setup
+from IPython.display import Markdown
 
 {% raw %}
 ---CELL---
@@ -9,8 +10,7 @@ from on_call.modules.feature_summary import get_features_nlp_setup
 """Generate feature-level natural language insights"""
 
 for window in window_analyses:
-    print(f"\nAnalysis for window {window.window_id}\n")
-    print("-" * 80 + "\n")
     _context, _prompt = get_features_nlp_setup(window)
     feature_summary = get_summary(_context, _prompt)
-    print(feature_summary)
+    display(Markdown(f"### Analysis for window {window.window_id}\n"))
+    display(Markdown(f"{feature_summary}"))

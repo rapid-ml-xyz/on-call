@@ -10,7 +10,7 @@ def get_features_nlp_setup(window):
     {window.drift_report.json()}
     {window.quality_report.json()}
     Here's the timeframe: [{window.start_time}, {window.end_time}]
-    Try using layman's English
+    Try using layman's English, and respond in markdown.
     """
 
     return context, prompt
