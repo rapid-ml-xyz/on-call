@@ -1,9 +1,7 @@
 import pandas as pd
+from evidently import ColumnMapping
 from evidently.report import Report
-from evidently.metric_preset import (
-    TargetDriftPreset,
-    RegressionPreset,
-)
+from evidently.metric_preset import TargetDriftPreset, RegressionPreset
 
 
 def calculate_dynamic_window_info(df: pd.DataFrame) -> tuple[int, pd.Timedelta]:
@@ -45,11 +43,10 @@ def generate_time_windows_datetime(df: pd.DataFrame) -> list[tuple[pd.Timestamp,
     return windows
 
 
-# TODO: Move this to a more appropriate place
 def run_performance_reports(
     current: pd.DataFrame,
     reference: pd.DataFrame,
-    column_mapping: dict
+    column_mapping: ColumnMapping
 ) -> list[tuple[Report, Report]]:
     """Generate performance and drift reports for each time window."""
     windows = generate_time_windows_datetime(current)
