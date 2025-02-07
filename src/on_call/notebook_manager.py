@@ -60,9 +60,14 @@ class NotebookManager:
         Gracefully stops the kernel and its channels.
         """
         if self.active_kernel:
-            self.kc.stop_channels()
-            self.km.shutdown_kernel(now=True)
-            self.active_kernel = False
+            try:
+                self.kc.stop_channels()
+                self.km.shutdown_kernel(now=True)
+                del self.kc
+                del self.km
+                self.active_kernel = False
+            except:
+                pass
 
     def add_cell(self, source: str, cell_type: str = "code") -> str:
         """
@@ -244,11 +249,4 @@ class NotebookManager:
             f.write(body)
 
     def __del__(self):
-        """
-        Destructor: ensure kernel is closed and notebook is saved.
-        """
-        try:
-            if hasattr(self, 'active_kernel') and self.active_kernel:
-                self._stop_kernel()
-        except:
-            pass
+        pass

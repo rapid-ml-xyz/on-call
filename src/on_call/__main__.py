@@ -1,4 +1,6 @@
 from dotenv import load_dotenv
+import argparse
+import joblib
 import pandas as pd
 import os
 import sys
@@ -8,34 +10,24 @@ if not __package__:
     sys.path.insert(0, package_source_path)
 
 from on_call.notebook_manager import NotebookManager
-from on_call.data.hm.inferred_stypes import task_to_stypes
-from on_call.model.lgbm_model import LGBMModel
 from on_call.model.random_forest_regressor_model import RandomForestRegressor
-from on_call.model_pipeline import ModelPipeline
 from on_call.orchestrator.engines import LangGraphMessageState
 from on_call.workflow.setup import setup_analysis_workflow
 
-SUBSAMPLE = 20_000
-DATASET = 'rel-hm'
-TASK = 'user-churn'
-PIPELINE_PATH = 'saved_pipelines/rel_hm_user_churn_lgbm_20k.joblib'
-
+DEFAULT_MODEL_PATH = 'joblibs/random_forest_bike_sharing.joblib'
 load_dotenv()
 
 
-def _generate_pipeline(_task_params, _train_df):
-    full_task_name = f'{DATASET}-{TASK}'
-    col_to_stype = task_to_stypes[full_task_name]
-    model = LGBMModel(_task_params, col_to_stype)
-
-    _pipeline = ModelPipeline(model, col_to_stype)
-    _pipeline.fit(_train_df)
-    _pipeline.save(PIPELINE_PATH)
-
-    return _pipeline
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run on-call analysis with specified dataset')
+    parser.add_argument('--data-path', type=str, default='data/bike_sharing_data.csv',
+                        help='Path to the dataset CSV file')
+    parser.add_argument('--model-path', type=str,
+                        help='Path to saved model. If not provided, a new model will be built')
+    return parser.parse_args()
 
 
-def build_model(raw_data):
+def build_model(raw_data, save_path=DEFAULT_MODEL_PATH):
     model = RandomForestRegressor(target='cnt')
     model.set_features(
         numerical_features=['temp', 'atemp', 'hum', 'windspeed', 'hr', 'weekday'],
@@ -48,6 +40,10 @@ def build_model(raw_data):
     )
     model.train()
     model.generate_predictions()
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    joblib.dump(model, save_path)
+
     return model
 
 
@@ -63,11 +59,18 @@ def run_analysis(model, notebook_manager) -> LangGraphMessageState:
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("data/bike_sharing_data.csv", index_col=0, parse_dates=True)
-    _model = build_model(df)
+    args = parse_args()
+
+    if args.model_path:
+        if not os.path.exists(args.model_path):
+            raise FileNotFoundError(f"Model not found at path: {args.model_path}")
+        _model = joblib.load(args.model_path)
+    else:
+        df = pd.read_csv(args.data_path, index_col=0, parse_dates=True)
+        _model = build_model(df)
+
     _notebook_manager = NotebookManager(notebook_path="oncall.ipynb")
     try:
         response = run_analysis(_model, _notebook_manager)
-        print(f"Analysis Results: {response}")
     finally:
         _notebook_manager.shutdown()
