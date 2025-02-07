@@ -17,7 +17,7 @@ def extract_drift_metrics(window_analyses):
                     drift_data.append({
                         'window': window_label,
                         'feature': feature,
-                        'drift_score': metrics.get('drift_score', 0),
+                        'drift_score': 1 - metrics.get('drift_score', 0),
                         'drift_detected': metrics.get('drift_detected', False),
                         'feature_type': metrics.get('column_type', 'unknown')
                     })
@@ -83,7 +83,7 @@ def create_feature_analysis_plot(window_analyses):
             y=features,
             text=drift_text,
             hoverongaps=False,
-            colorscale='RdYlBu',
+            colorscale='RdYlBu_R',
             colorbar=dict(
                 title='Drift Score',
                 y=0.8,
@@ -281,6 +281,5 @@ def create_feature_summary_plot(window_analyses):
         linecolor='black',
         mirror=True
     )
-
 
     return fig

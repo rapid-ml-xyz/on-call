@@ -117,7 +117,7 @@ def create_drift_analysis_plot(reports):
                 drift_scores.append({
                     'window': f"Window {i+1}",
                     'feature': feature,
-                    'score': result.get('drift_score', 0),
+                    'score': 1 - result.get('drift_score', 0),
                     'detected': result.get('drift_detected', False)
                 })
 
@@ -140,7 +140,7 @@ def create_drift_analysis_plot(reports):
             y=features,
             text=text_data,
             hoverongaps=False,
-            colorscale='RdYlBu',
+            colorscale='RdYlBu_R',
             colorbar=dict(title='Drift Score')
         )
     )
