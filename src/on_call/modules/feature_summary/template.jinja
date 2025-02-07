@@ -2,45 +2,15 @@
 Fetch insights about feature & data drift in natural language
 """
 
-_context = """
-How does the feature distribution & quality changed compared to baseline?
-Look at the data drift report & data quality report.
-Focus on the columns that have changed, and try to answer "how" & "why."
-"""
-
-{% raw %}
----CELL---
-{% endraw %}
-
-def generate_window_prompt(window) -> str:
-    """Generate analysis prompt for a single window."""
-    timeframe = f"Time Range: {window.start_time} to {window.end_time}"
-    return f"""
-    Please provide a clear, concise natural language summary of the following JSON data:
-    {window.drift_report.json()}
-    {window.quality_report.json()}
-
-    Here's the timeframe as well: {timeframe}
-    Try using layman's English"""
-
-{% raw %}
----CELL---
-{% endraw %}
-
-def print_window_analysis(window, context: str) -> None:
-    """Print analysis for a single window."""
-    print(f"\nWindow {window.window_id}")
-    summary = get_openai_result(
-        context,
-        generate_window_prompt(window),
-        openai_api_key
-    )
-    print(summary)
-    print("-" * 80)
+from on_call.modules.feature_summary import get_features_nlp_setup
 
 {% raw %}
 ---CELL---
 {% endraw %}
 
 for window in window_analyses:
-    print_window_analysis(window, _context)
+    print(f"\nAnalysis for window {window.window_id}\n")
+    print("-" * 80 + "\n")
+    _context, _prompt = get_features_nlp_setup(window)
+    feature_summary = get_summary(_context, _prompt)
+    print(feature_summary)
