@@ -23,7 +23,7 @@ def get_time_series_nlp_setup(analysis_json):
     prompt = f"""
     Please provide a clear, concise natural language summary of the following JSON data:
     {json_str}
-    Try using layman's English"""
+    Try using layman's English, and respond in markdown."""
 
     return context, prompt
 
