@@ -282,24 +282,5 @@ def create_feature_summary_plot(window_analyses):
         mirror=True
     )
 
-    fig.add_annotation(
-        text="Higher values indicate more drift",
-        xref="paper",
-        yref="paper",
-        x=0.25,
-        y=1.05,
-        showarrow=False,
-        font=dict(size=10)
-    )
-
-    fig.add_annotation(
-        text="Larger differences indicate more distribution change",
-        xref="paper",
-        yref="paper",
-        x=0.75,
-        y=1.05,
-        showarrow=False,
-        font=dict(size=10)
-    )
 
     return fig
