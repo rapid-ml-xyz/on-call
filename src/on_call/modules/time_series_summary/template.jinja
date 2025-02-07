@@ -1,16 +1,12 @@
-"""
-Fetch insights about model & target drift in natural language
-"""
+"""Natural language insights cell for model and target drift.
+Generates natural language summaries of model performance and drift analysis."""
 
 from on_call.modules.time_series_summary import get_summary, get_time_series_nlp_setup
 
 {% raw %}
 ---CELL---
 {% endraw %}
-
-"""
-Fetch insights about model & target drift in natural language
-"""
+"""Generate natural language summaries of model and drift analysis"""
 
 _context, _prompt = get_time_series_nlp_setup(analysis)
 get_summary(_context, _prompt)

@@ -1,4 +1,6 @@
-{# Import modules #}
+"""Visualization cell for performance and drift analysis.
+Creates and displays consolidated plots for performance metrics and drift analysis across time windows."""
+
 from on_call.modules.window_visualizations import (
    create_consolidated_performance_plot,
    create_drift_analysis_plot,
@@ -8,6 +10,7 @@ from on_call.modules.window_visualizations import (
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Generate and display performance and drift visualizations"""
 
 performance_fig = create_consolidated_performance_plot(reports, windows)
 drift_fig = create_drift_analysis_plot(reports)

@@ -1,4 +1,7 @@
-{# Import modules #}
+"""Time series window analysis cell.
+Calculates time windows for analysis and runs performance reports across specified windows.
+Configures column mapping for target, prediction, and feature variables."""
+
 from on_call.modules.time_series_reports import (
    calculate_dynamic_window_info,
    generate_time_windows_datetime,
@@ -8,8 +11,8 @@ from on_call.modules.time_series_reports import (
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Calculate time windows dynamically based on current data"""
 
-{# Calculate windows for current data #}
 n_windows, actual_window_timeframe = calculate_dynamic_window_info(current)
 print(f"Number of windows: {n_windows}")
 print(f"Window timeframe: {actual_window_timeframe}")
@@ -17,8 +20,8 @@ print(f"Window timeframe: {actual_window_timeframe}")
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Generate and display time window intervals"""
 
-{# Print windows for current data #}
 windows = generate_time_windows_datetime(current)
 for start_time, end_time in windows:
     print(f"Window: {start_time} to {end_time}")
@@ -27,8 +30,8 @@ for start_time, end_time in windows:
 {% raw %}
 ---CELL---
 {% endraw %}
+"""Configure column mapping and run performance analysis"""
 
-{# Run reports #}
 column_mapping = ColumnMapping()
 column_mapping.target = {{ target }}
 column_mapping.prediction = {{ prediction }}
